@@ -5,6 +5,7 @@ import com.duongnd.kytucxa.data.remote.dto.ApiResponse
 import com.duongnd.kytucxa.data.remote.dto.auth.UpdateProfileRequest
 import com.duongnd.kytucxa.data.remote.dto.auth.login.LoginRequest
 import com.duongnd.kytucxa.data.remote.dto.auth.login.LoginResponse
+import com.duongnd.kytucxa.data.remote.dto.auth.login.TokenDTO
 import com.duongnd.kytucxa.data.remote.dto.auth.me.CurrentUser
 import com.duongnd.kytucxa.data.remote.dto.auth.register.RegisterRequest
 import com.duongnd.kytucxa.data.remote.dto.auth.register.RegisterResponse
@@ -57,4 +58,9 @@ interface AuthRepository {
      * Cập nhật thông tin cá nhân
      */
     suspend fun updateProfile(updateProfileRequest: UpdateProfileRequest): Flow<Resource<CurrentUser>>
+
+    /**
+     * Làm mới access token
+     */
+    suspend fun refreshToken(): Flow<Resource<TokenDTO>>
 }

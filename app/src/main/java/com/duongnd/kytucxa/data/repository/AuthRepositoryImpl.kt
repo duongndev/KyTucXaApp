@@ -13,6 +13,8 @@ import com.duongnd.kytucxa.data.remote.dto.auth.me.CurrentUser
 import com.duongnd.kytucxa.data.remote.dto.auth.register.RegisterRequest
 import com.duongnd.kytucxa.data.remote.dto.auth.register.RegisterResponse
 import com.duongnd.kytucxa.data.remote.dto.auth.verify.VerifyOtpRequest
+import com.duongnd.kytucxa.data.remote.dto.auth.login.RefreshTokenRequest
+import com.duongnd.kytucxa.data.remote.dto.auth.login.TokenDTO
 import com.duongnd.kytucxa.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -96,4 +98,17 @@ class AuthRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun refreshToken(): Flow<Resource<TokenDTO>> {
+        return handleResponseResource {
+            val refreshToken = sessionManager.getRefreshToken() ?: throw Exception("No refresh token")
+            authApi.refreshTokenApi(RefreshTokenRequest(refreshToken))
+        }.onEach { resource ->
+            if (resource is Resource.Success) {
+                sessionManager.saveAccessToken(resource.data.accessToken)
+                sessionManager.saveRefreshToken(resource.data.refreshToken)
+            }
+        }
+    }
+
 }

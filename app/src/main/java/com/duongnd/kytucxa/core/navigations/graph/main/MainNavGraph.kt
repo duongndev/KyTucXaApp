@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
@@ -40,8 +40,8 @@ import com.duongnd.kytucxa.feature.payment.PaymentScreen
 import com.duongnd.kytucxa.feature.profile.ProfileScreen
 import com.duongnd.kytucxa.feature.registration.DocumentUploadScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationFlowScreen
-import com.duongnd.kytucxa.feature.registration.residence.RegistrationFormScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
+import com.duongnd.kytucxa.feature.registration.residence.ResidenceFormScreen
 import com.duongnd.kytucxa.feature.room.RoomDetailScreen
 import com.duongnd.kytucxa.feature.room.RoomScreen
 import com.duongnd.kytucxa.feature.support.SupportScreen
@@ -154,7 +154,7 @@ fun MainScreen(rootNavController: NavHostController) {
                         rootNavController.getBackStackEntry(Graphs.MAIN)
                     }
                     val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
-                    RegistrationFormScreen(
+                    ResidenceFormScreen(
                         viewModel = viewModel,
                         onNext = { navController.navigate(Screen.DocumentUpload.route) },
                         onBack = { navController.popBackStack() }

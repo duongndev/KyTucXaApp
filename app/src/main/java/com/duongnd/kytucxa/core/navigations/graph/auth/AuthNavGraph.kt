@@ -1,7 +1,7 @@
 package com.duongnd.kytucxa.core.navigations.graph.auth
 
 import androidx.compose.runtime.remember
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -14,12 +14,12 @@ import com.duongnd.kytucxa.feature.auth.login.LoginScreen
 import com.duongnd.kytucxa.feature.auth.register.AvatarUploadScreen
 import com.duongnd.kytucxa.feature.auth.verify.EmailVerificationScreen
 import com.duongnd.kytucxa.feature.auth.register.RegisterScreen
-import com.duongnd.kytucxa.feature.registration.DirectSubmissionScreen
+import com.duongnd.kytucxa.feature.registration.submissionMethod.DirectSubmissionScreen
 import com.duongnd.kytucxa.feature.registration.DocumentUploadScreen
-import com.duongnd.kytucxa.feature.registration.residence.RegistrationFormScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationSuccessScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
-import com.duongnd.kytucxa.feature.registration.SubmissionMethodScreen
+import com.duongnd.kytucxa.feature.registration.submissionMethod.SubmissionMethodScreen
+import com.duongnd.kytucxa.feature.registration.residence.ResidenceFormScreen
 
 fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
     navigation(
@@ -111,7 +111,7 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
                 navController.getBackStackEntry(Graphs.AUTH)
             }
             val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
-            RegistrationFormScreen(
+            ResidenceFormScreen(
                 viewModel = viewModel,
                 onNext = { navController.navigate(Screen.DocumentUpload.route) },
                 onBack = { navController.popBackStack() }

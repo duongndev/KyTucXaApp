@@ -38,40 +38,40 @@ data class RegistrationStep(
 @Composable
 fun RegistrationFlowScreen(onBack: () -> Unit) {
     val steps = listOf(
-        _root_ide_package_.com.duongnd.kytucxa.feature.registration.RegistrationStep(
+        RegistrationStep(
             "Đăng ký & Điền thông tin",
             "Sinh viên đã hoàn thành điền thông tin cá nhân online.",
-            _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.COMPLETED,
+            StepStatus.COMPLETED,
             Icons.Rounded.Assignment
         ),
-        _root_ide_package_.com.duongnd.kytucxa.feature.registration.RegistrationStep(
+        RegistrationStep(
             "Upload bản scan giấy tờ",
             "Đã tải lên các giấy tờ cần thiết (CCCD, Giấy báo nhập học...).",
-            _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.COMPLETED,
+            StepStatus.COMPLETED,
             Icons.Rounded.CloudUpload
         ),
-        _root_ide_package_.com.duongnd.kytucxa.feature.registration.RegistrationStep(
+        RegistrationStep(
             "Admin xét duyệt online",
             "Hồ sơ của bạn đang được cán bộ kiểm tra tính hợp lệ.",
-            _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.IN_PROGRESS,
+            StepStatus.IN_PROGRESS,
             Icons.Rounded.FactCheck
         ),
-        _root_ide_package_.com.duongnd.kytucxa.feature.registration.RegistrationStep(
+        RegistrationStep(
             "Nộp hồ sơ bản cứng",
             "Sau khi duyệt online, bạn cần nộp bản cứng tại văn phòng KTX.",
-            _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.PENDING,
+            StepStatus.PENDING,
             Icons.Rounded.Description
         ),
-        _root_ide_package_.com.duongnd.kytucxa.feature.registration.RegistrationStep(
+        RegistrationStep(
             "Ký hợp đồng & Đóng tiền",
             "Tạo hợp đồng điện tử và nộp tiền đặt cọc giữ chỗ.",
-            _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.PENDING,
+            StepStatus.PENDING,
             Icons.Rounded.DriveFileRenameOutline
         ),
-        _root_ide_package_.com.duongnd.kytucxa.feature.registration.RegistrationStep(
+        RegistrationStep(
             "Nhận phòng",
             "Phân phòng và hoàn tất thủ tục nhận phòng.",
-            _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.PENDING,
+            StepStatus.PENDING,
             Icons.Rounded.MeetingRoom
         )
     )
@@ -154,7 +154,7 @@ fun RegistrationFlowScreen(onBack: () -> Unit) {
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
                 itemsIndexed(steps) { index, step ->
-                    _root_ide_package_.com.duongnd.kytucxa.feature.registration.RegistrationStepItem(
+                    RegistrationStepItem(
                         step = step,
                         isLast = index == steps.size - 1
                     )
@@ -168,8 +168,8 @@ fun RegistrationFlowScreen(onBack: () -> Unit) {
 fun RegistrationStepItem(step: com.duongnd.kytucxa.feature.registration.RegistrationStep, isLast: Boolean) {
     val primaryColor = Color(0xFF0047BB)
     val contentColor = when (step.status) {
-        _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.COMPLETED -> primaryColor
-        _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.IN_PROGRESS -> primaryColor
+        StepStatus.COMPLETED -> primaryColor
+        StepStatus.IN_PROGRESS -> primaryColor
         else -> Color.Gray.copy(alpha = 0.3f)
     }
 
@@ -188,24 +188,24 @@ fun RegistrationStepItem(step: com.duongnd.kytucxa.feature.registration.Registra
                     .size(32.dp)
                     .clip(CircleShape)
                     .background(
-                        if (step.status == _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.COMPLETED) primaryColor
-                        else if (step.status == _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.IN_PROGRESS) Color.White
+                        if (step.status == StepStatus.COMPLETED) primaryColor
+                        else if (step.status == StepStatus.IN_PROGRESS) Color.White
                         else Color.White
                     )
                     .border(
                         width = 2.dp,
-                        color = if (step.status == _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.PENDING) Color.LightGray else primaryColor,
+                        color = if (step.status == StepStatus.PENDING) Color.LightGray else primaryColor,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                if (step.status == _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.COMPLETED) {
+                if (step.status == StepStatus.COMPLETED) {
                     Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
                 } else {
                     Icon(
                         step.icon,
                         null,
-                        tint = if (step.status == _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.IN_PROGRESS) primaryColor else Color.LightGray,
+                        tint = if (step.status == StepStatus.IN_PROGRESS) primaryColor else Color.LightGray,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -216,7 +216,7 @@ fun RegistrationStepItem(step: com.duongnd.kytucxa.feature.registration.Registra
                         .width(2.dp)
                         .weight(1f)
                         .background(
-                            if (step.status == _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.COMPLETED) primaryColor else Color.LightGray
+                            if (step.status == StepStatus.COMPLETED) primaryColor else Color.LightGray
                         )
                 )
             }
@@ -234,7 +234,7 @@ fun RegistrationStepItem(step: com.duongnd.kytucxa.feature.registration.Registra
                 text = step.title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = if (step.status == _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.PENDING) Color.Gray else Color(0xFF1E293B)
+                color = if (step.status == StepStatus.PENDING) Color.Gray else Color(0xFF1E293B)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
@@ -244,7 +244,7 @@ fun RegistrationStepItem(step: com.duongnd.kytucxa.feature.registration.Registra
                 lineHeight = 18.sp
             )
             
-            if (step.status == _root_ide_package_.com.duongnd.kytucxa.feature.registration.StepStatus.IN_PROGRESS) {
+            if (step.status == StepStatus.IN_PROGRESS) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Surface(
                     color = primaryColor.copy(alpha = 0.1f),

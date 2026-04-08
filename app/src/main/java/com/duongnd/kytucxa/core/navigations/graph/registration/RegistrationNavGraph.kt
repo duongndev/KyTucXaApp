@@ -1,19 +1,20 @@
 package com.duongnd.kytucxa.core.navigations.graph.registration
 
 import androidx.compose.runtime.remember
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.duongnd.kytucxa.core.navigations.Screen
 import com.duongnd.kytucxa.core.navigations.Graphs
+import com.duongnd.kytucxa.core.navigations.Screen
 import com.duongnd.kytucxa.feature.registration.DocumentUploadScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationFlowScreen
-import com.duongnd.kytucxa.feature.registration.residence.RegistrationFormScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
 import com.duongnd.kytucxa.feature.registration.ResidenceRegistrationScreen
-import com.duongnd.kytucxa.feature.registration.SubmissionMethodScreen
+import com.duongnd.kytucxa.feature.registration.residence.ResidenceFormScreen
+import com.duongnd.kytucxa.feature.registration.submissionMethod.DirectSubmissionScreen
+import com.duongnd.kytucxa.feature.registration.submissionMethod.SubmissionMethodScreen
 
 fun NavGraphBuilder.registrationNavGraph(navController: NavHostController) {
     navigation(
@@ -27,10 +28,21 @@ fun NavGraphBuilder.registrationNavGraph(navController: NavHostController) {
                     navController.navigate(Screen.RegistrationForm.route)
                 },
                 onDirectSelected = {
-                    navController.navigate(Screen.RegistrationFlow.route)
+                    navController.navigate(Screen.DirectSubmissionGuide.route)
                 },
                 onExit = {
                     navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Screen.DirectSubmissionGuide.route) {
+            DirectSubmissionScreen(
+                onBack = {
+                    navController.popBackStack()
+                },
+                onConfirm = {
+                    navController.navigate(Screen.RegistrationForm.route)
                 }
             )
         }
@@ -40,7 +52,7 @@ fun NavGraphBuilder.registrationNavGraph(navController: NavHostController) {
                 navController.getBackStackEntry(Graphs.REGISTRATION)
             }
             val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
-            RegistrationFormScreen(
+            ResidenceFormScreen(
                 viewModel = viewModel,
                 onNext = { navController.navigate(Screen.ResidenceRegistration.route) },
                 onBack = { navController.popBackStack() }
@@ -53,7 +65,7 @@ fun NavGraphBuilder.registrationNavGraph(navController: NavHostController) {
                 onBack = { navController.popBackStack() }
             )
         }
-        
+
         composable(Screen.DocumentUpload.route) { entry ->
             val parentEntry = remember(entry) {
                 navController.getBackStackEntry(Graphs.REGISTRATION)
@@ -65,7 +77,7 @@ fun NavGraphBuilder.registrationNavGraph(navController: NavHostController) {
                 onBack = { navController.popBackStack() }
             )
         }
-        
+
         composable(Screen.RegistrationFlow.route) {
             RegistrationFlowScreen(
                 onBack = {

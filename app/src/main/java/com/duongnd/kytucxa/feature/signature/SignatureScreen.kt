@@ -1,7 +1,6 @@
-package com.duongnd.kytucxa.feature.registration
+package com.duongnd.kytucxa.feature.signature
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons

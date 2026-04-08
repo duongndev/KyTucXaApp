@@ -1,4 +1,4 @@
-package com.duongnd.kytucxa.feature.registration
+package com.duongnd.kytucxa.feature.registration.submissionMethod
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

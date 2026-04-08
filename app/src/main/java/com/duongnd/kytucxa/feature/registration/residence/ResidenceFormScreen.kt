@@ -51,7 +51,7 @@ import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegistrationFormScreen(
+fun ResidenceFormScreen(
     viewModel: RegistrationViewModel = hiltViewModel(),
     onNext: () -> Unit,
     onBack: () -> Unit
@@ -59,7 +59,7 @@ fun RegistrationFormScreen(
     val currentUser by viewModel.currentUser.collectAsState()
     val savedFormFields by viewModel.formFields.collectAsState()
 
-    RegistrationFormContent(
+    ResidenceFormScreenContent(
         currentUser = currentUser,
         savedFormFields = savedFormFields,
         onSaveAndContinue = { fields ->
@@ -72,7 +72,7 @@ fun RegistrationFormScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegistrationFormContent(
+fun ResidenceFormScreenContent(
     currentUser: CurrentUser?,
     savedFormFields: FormFields?,
     onSaveAndContinue: (FormFields) -> Unit,
@@ -421,8 +421,8 @@ fun RegistrationFormContent(
 
 @Preview(showBackground = true)
 @Composable
-fun RegistrationFormPreview(){
-    RegistrationFormContent(
+fun ResidenceFormPreview(){
+    ResidenceFormScreenContent(
         currentUser = null,
         savedFormFields = null,
         onSaveAndContinue = {},

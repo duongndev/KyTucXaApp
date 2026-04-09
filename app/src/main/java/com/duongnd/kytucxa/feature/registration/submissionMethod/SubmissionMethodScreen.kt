@@ -101,13 +101,13 @@ fun SubmissionMethodScreen(
                     title = "Nộp trực tiếp tại văn phòng",
                     description = "Tải mẫu đơn, in ra và nộp kèm các giấy tờ tại văn phòng KTX.",
                     icon = Icons.Rounded.BusinessCenter,
-                    isSelected = state.selectedMethod == SubmissionMethod.DIRECT,
-                    onClick = { viewModel.onMethodSelected(SubmissionMethod.DIRECT) },
+                    isSelected = state.selectedMethod == SubmissionMethod.OFFLINE,
+                    onClick = { viewModel.onMethodSelected(SubmissionMethod.OFFLINE) },
                     primaryColor = primaryColor
                 )
 
                 AnimatedVisibility(
-                    visible = state.selectedMethod == SubmissionMethod.DIRECT,
+                    visible = state.selectedMethod == SubmissionMethod.OFFLINE,
                     enter = fadeIn() + expandVertically(),
                     exit = fadeOut() + shrinkVertically()
                 ) {
@@ -184,7 +184,7 @@ fun SubmissionMethodScreen(
                     onClick = {
                         if (state.selectedMethod == SubmissionMethod.ONLINE) {
                             viewModel.onContinueClicked()
-                        } else if (state.selectedMethod == SubmissionMethod.DIRECT) {
+                        } else if (state.selectedMethod == SubmissionMethod.OFFLINE) {
                             onDirectSelected()
                         }
                     },

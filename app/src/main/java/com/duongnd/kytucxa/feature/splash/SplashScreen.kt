@@ -15,6 +15,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.rounded.AssignmentInd
+import androidx.compose.material.icons.rounded.NetworkCheck
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.Security
+import com.duongnd.kytucxa.data.remote.dto.registration.draft.DraftResponse
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import android.Manifest
+import android.os.Build
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -44,12 +52,15 @@ import com.duongnd.kytucxa.core.ui.components.KTXButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SplashScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToUpdateProfile: () -> Unit,
-    onNavigateToRegistration: () -> Unit,
+    onNavigateToRegistration: (DraftResponse?) -> Unit,
+    onNavigateToPending: (String) -> Unit,
+    onNavigateToRequiresSupplement: (String) -> Unit,
     viewModel: SplashViewModel = hiltViewModel()
 ) {
     val scale = remember { Animatable(0f) }
@@ -58,11 +69,24 @@ fun SplashScreen(
 
     var showCompleteProfileDialog by remember { mutableStateOf(false) }
     var showActiveAccountDialog by remember { mutableStateOf(false) }
+    var showNoInternetDialog by remember { mutableStateOf(false) }
+    var showDraftFoundDialog by remember { mutableStateOf(false) }
     var isAnimationFinished by remember { mutableStateOf(false) }
+
+    // Permission logic
+    val permissionsToRequest = mutableListOf(Manifest.permission.CAMERA)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        permissionsToRequest.add(Manifest.permission.READ_MEDIA_IMAGES)
+        permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+    } else {
+        permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
+
+    val permissionState = rememberMultiplePermissionsState(permissions = permissionsToRequest)
 
     // Khởi tạo animation và check session
     LaunchedEffect(Unit) {
-        viewModel.checkUserSession()
+        viewModel.checkInitialRequirements()
 
         launch {
             scale.animateTo(
@@ -84,25 +108,85 @@ fun SplashScreen(
     }
 
     // Luồng điều hướng chính sau khi animation kết thúc
-    LaunchedEffect(destination, isAnimationFinished) {
-        if (isAnimationFinished && destination !is SplashDestination.Loading) {
-            when (destination) {
+    LaunchedEffect(destination, isAnimationFinished, permissionState.allPermissionsGranted) {
+        // Ưu tiên hiển thị lỗi mạng hoặc yêu cầu quyền ngay lập tức
+        if (destination is SplashDestination.NoInternet) {
+            showNoInternetDialog = true
+            return@LaunchedEffect
+        }
+        
+        if (destination is SplashDestination.RequestPermissions) {
+            if (!permissionState.allPermissionsGranted) {
+                permissionState.launchMultiplePermissionRequest()
+            }
+            return@LaunchedEffect
+        }
+
+        if (isAnimationFinished && destination !is SplashDestination.Loading && 
+            destination !is SplashDestination.CheckingNetwork && 
+            destination !is SplashDestination.CheckingPermissions &&
+            destination !is SplashDestination.Idle) {
+            
+            when (val dest = destination) {
                 is SplashDestination.Login -> onNavigateToLogin()
                 is SplashDestination.Home -> onNavigateToHome()
-
-                // Bước 3: Thiếu thông tin -> Hiện Dialog yêu cầu cập nhật
-                is SplashDestination.UpdateProfile -> {
-                    showCompleteProfileDialog = true
-                }
-
-                // Bước 4: Tài khoản chưa xác thực (isAccountVerified = false)
+                is SplashDestination.UpdateProfile -> showCompleteProfileDialog = true
                 is SplashDestination.Registration -> {
-                    showActiveAccountDialog = true
+                    if (dest.draft?.hasDraft == true) {
+                        showDraftFoundDialog = true
+                    } else {
+                        onNavigateToRegistration(null)
+                    }
                 }
-
+                is SplashDestination.Pending -> onNavigateToPending(dest.registrationId)
+                is SplashDestination.RequiresSupplement -> onNavigateToRequiresSupplement(dest.registrationId)
+                is SplashDestination.Rejected -> {
+                    // Hiển thị thông báo bị từ chối rồi cho làm lại
+                    onNavigateToRegistration(null)
+                }
                 else -> {}
             }
         }
+    }
+
+    // Sau khi cấp quyền xong, check lại session
+    LaunchedEffect(permissionState.allPermissionsGranted) {
+        if (permissionState.allPermissionsGranted && destination is SplashDestination.RequestPermissions) {
+            viewModel.checkInitialRequirements()
+        }
+    }
+
+    // Dialog không có internet
+    if (showNoInternetDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            icon = { Icon(Icons.Rounded.NetworkCheck, null, tint = Color.Red) },
+            title = { Text("Không có kết nối") },
+            text = { Text("Vui lòng kiểm tra kết nối internet của bạn và thử lại.") },
+            confirmButton = {
+                KTXButton(text = "THỬ LẠI", onClick = {
+                    showNoInternetDialog = false
+                    viewModel.checkInitialRequirements()
+                })
+            },
+            shape = RoundedCornerShape(28.dp)
+        )
+    }
+
+    // Dialog yêu cầu quyền (nếu bị từ chối)
+    if (destination is SplashDestination.RequestPermissions && !permissionState.allPermissionsGranted) {
+        AlertDialog(
+            onDismissRequest = { },
+            icon = { Icon(Icons.Rounded.Security, null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text("Yêu cầu quyền truy cập") },
+            text = { Text("Ứng dụng cần quyền Camera, Bộ nhớ và Thông báo để hoạt động đầy đủ tính năng.") },
+            confirmButton = {
+                KTXButton(text = "CẤP QUYỀN", onClick = {
+                    permissionState.launchMultiplePermissionRequest()
+                })
+            },
+            shape = RoundedCornerShape(28.dp)
+        )
     }
 
     // Dialog thông báo thiếu thông tin hồ sơ (Bước 3)
@@ -150,7 +234,7 @@ fun SplashScreen(
                     text = "NỘP HỒ SƠ NGAY",
                     onClick = {
                         showActiveAccountDialog = false
-                        onNavigateToRegistration()
+                        onNavigateToRegistration(null)
                     }
                 )
             },
@@ -161,6 +245,55 @@ fun SplashScreen(
                     onNavigateToLogin()
                 }) {
                     Text("ĐĂNG XUẤT", color = Color.Gray)
+                }
+            },
+            shape = RoundedCornerShape(28.dp)
+        )
+    }
+
+    // Dialog thông báo tìm thấy bản nháp đơn đăng ký
+    if (showDraftFoundDialog) {
+        val draft = (destination as? SplashDestination.Registration)?.draft
+        AlertDialog(
+            onDismissRequest = { },
+            icon = {
+                Icon(
+                    Icons.Rounded.EditNote,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Tiếp tục đăng ký?",
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Chúng tôi tìm thấy một đơn đăng ký đang làm dở (${draft?.progressPercent ?: 0}%). Bạn có muốn tiếp tục không?",
+                        textAlign = TextAlign.Center
+                    )
+                }
+            },
+            confirmButton = {
+                KTXButton(
+                    text = "TIẾP TỤC",
+                    onClick = {
+                        showDraftFoundDialog = false
+                        onNavigateToRegistration(draft)
+                    }
+                )
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDraftFoundDialog = false
+                    showActiveAccountDialog = true
+                }) {
+                    Text("LÀM MỚI", color = Color.Gray)
                 }
             },
             shape = RoundedCornerShape(28.dp)

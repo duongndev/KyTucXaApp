@@ -1,5 +1,6 @@
 package com.duongnd.kytucxa.feature.registration.submissionMethod
 
+import androidx.compose.ui.text.toLowerCase
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duongnd.kytucxa.core.utils.Resource
@@ -30,7 +31,7 @@ class SubmissionMethodViewModel @Inject constructor(
         val currentMethod = _state.value.selectedMethod ?: return
         
         if (currentMethod == SubmissionMethod.ONLINE) {
-            createRegistration(currentMethod.name)
+            createRegistration(currentMethod.name.lowercase())
         }
     }
 

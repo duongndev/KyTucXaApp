@@ -5,6 +5,7 @@ import com.duongnd.kytucxa.core.utils.handleResponseResource
 import com.duongnd.kytucxa.data.remote.api.RegistrationApi
 import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.draft.DraftResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryRequest
@@ -39,6 +40,12 @@ class RegistrationRepositoryImpl @Inject constructor(
     ): Flow<Resource<TemporaryResponse>> {
         return handleResponseResource {
             registrationApi.updateTemporaryFormApi(id, temporaryRequest)
+        }
+    }
+
+    override suspend fun getCurrentDraft(): Flow<Resource<DraftResponse>> {
+        return handleResponseResource {
+            registrationApi.getCurrentDraftApi()
         }
     }
 

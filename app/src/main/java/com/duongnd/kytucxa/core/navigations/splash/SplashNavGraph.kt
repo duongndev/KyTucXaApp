@@ -31,9 +31,26 @@ fun NavGraphBuilder.splashNavGraph(navController: NavHostController) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
                 },
-                onNavigateToRegistration = {
-                    // Điều hướng tới luồng đăng ký (Bắt đầu từ chọn phương thức nộp hồ sơ)
-                    navController.navigate(Graphs.REGISTRATION) {
+                onNavigateToRegistration = { draft ->
+                    if (draft != null) {
+                        // Lưu draft vào ViewModel của Registration hoặc truyền qua Route
+                        navController.navigate(Graphs.REGISTRATION) {
+                            popUpTo(Graphs.SPLASH) { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate(Graphs.REGISTRATION) {
+                            popUpTo(Graphs.SPLASH) { inclusive = true }
+                        }
+                    }
+                },
+                onNavigateToPending = { registrationId ->
+                    navController.navigate(Screen.RegistrationFlow.route) {
+                        popUpTo(Graphs.SPLASH) { inclusive = true }
+                    }
+                },
+                onNavigateToRequiresSupplement = { registrationId ->
+                    // Giả định quay lại bước upload tài liệu
+                    navController.navigate(Screen.DocumentUpload.route) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
                 }

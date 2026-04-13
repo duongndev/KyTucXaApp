@@ -20,6 +20,9 @@ import com.duongnd.kytucxa.feature.registration.RegistrationSuccessScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
 import com.duongnd.kytucxa.feature.registration.submissionMethod.SubmissionMethodScreen
 import com.duongnd.kytucxa.feature.registration.residence.ResidenceFormScreen
+import com.duongnd.kytucxa.feature.registration.residence.ResidenceViewModel
+import com.duongnd.kytucxa.feature.registration.temporary.TemporaryFormScreen
+import com.duongnd.kytucxa.feature.registration.temporary.TemporaryViewModel
 
 fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
     navigation(
@@ -113,12 +116,25 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
             val parentEntry = remember(entry) {
                 navController.getBackStackEntry(Graphs.AUTH)
             }
-            val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
+            val viewModel = hiltViewModel<ResidenceViewModel>(parentEntry)
             ResidenceFormScreen(
                 viewModel = viewModel,
                 onNext = { navController.navigate(Screen.DocumentUpload.route) },
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        composable(Screen.TemporaryForm.route) {entry ->
+            val parentEntry = remember(entry) {
+                navController.getBackStackEntry(Graphs.AUTH)
+            }
+            val viewModel = hiltViewModel<TemporaryViewModel>(parentEntry)
+            TemporaryFormScreen(
+                viewModel = viewModel,
+                onNext = { navController.navigate(Screen.DocumentUpload.route) },
+                onBack = { navController.popBackStack() }
+            )
+
         }
         
         composable(Screen.DocumentUpload.route) { entry ->

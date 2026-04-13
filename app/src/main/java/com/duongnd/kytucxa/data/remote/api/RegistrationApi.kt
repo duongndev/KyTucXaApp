@@ -10,6 +10,7 @@ import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryReque
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -37,4 +38,8 @@ interface RegistrationApi {
     @GET("/api/registrations/my-current")
     suspend fun getCurrentDraftApi(): Response<ApiResponse<DraftResponse>>
 
+    @DELETE("/api/registrations/{id}")
+    suspend fun deleteRegistrationFormApi(
+        @Path("id") id: String
+    ): Response<ApiResponse<Map<String, Any?>?>>
 }

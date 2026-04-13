@@ -15,4 +15,5 @@ interface RegistrationRepository {
     suspend fun updateResidenceForm(id: String, residenceRequest: ResidenceRequest): Flow<Resource<ResidenceResponse>>
     suspend fun updateTemporaryForm(id: String, temporaryRequest: TemporaryRequest): Flow<Resource<TemporaryResponse>>
     suspend fun getCurrentDraft(): Flow<Resource<DraftResponse>>
+    suspend fun deleteRegistrationForm(id: String): Flow<Resource<Map<String, Any?>?>>
 }

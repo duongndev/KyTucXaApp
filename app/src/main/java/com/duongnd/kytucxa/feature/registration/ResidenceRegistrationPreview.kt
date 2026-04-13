@@ -1,27 +1,42 @@
 package com.duongnd.kytucxa.feature.registration
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,12 +44,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.duongnd.kytucxa.core.utils.DateUtils
 import com.duongnd.kytucxa.core.utils.GenderUtils
-import com.duongnd.kytucxa.domain.models.ResidenceRegistrationFields
+import com.duongnd.kytucxa.domain.models.TemporaryModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ResidenceRegistrationPreview(
-    data: ResidenceRegistrationFields,
+    data: TemporaryModel,
     onBack: () -> Unit
 ) {
     val configuration = LocalConfiguration.current
@@ -102,7 +117,10 @@ fun ResidenceRegistrationPreview(
                             color = Color.Black
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Box(modifier = Modifier.width(160.dp).height(1.dp).background(Color.Black))
+                        Box(modifier = Modifier
+                            .width(160.dp)
+                            .height(1.dp)
+                            .background(Color.Black))
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
                             "TỜ KHAI THAY ĐỔI THÔNG TIN CƯ TRÚ",
@@ -129,19 +147,25 @@ fun ResidenceRegistrationPreview(
 
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text("Ngày, tháng, năm sinh:", fontSize = 14.sp)
-                            ResidenceDottedText(DateUtils.formatString(data.dob), modifier = Modifier.weight(1f))
+                            ResidenceDottedText(
+                                DateUtils.formatString(data.dateOfBirth),
+                                modifier = Modifier.weight(1f)
+                            )
                         }
 
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text("Giới tính:", fontSize = 14.sp)
-                            ResidenceDottedText(GenderUtils.getGenderDisplay(data.gender), modifier = Modifier.weight(0.5f))
+                            ResidenceDottedText(
+                                GenderUtils.getGenderDisplay(data.gender),
+                                modifier = Modifier.weight(0.5f)
+                            )
                         }
 
 
                         Column {
                             Text("Số định danh cá nhân:", fontSize = 14.sp)
                             Spacer(modifier = Modifier.height(8.dp))
-                            IdNumberGrid(data.idNumber)
+                            IdNumberGrid(data.cccd)
                         }
 
                         Row(verticalAlignment = Alignment.Bottom) {
@@ -156,18 +180,21 @@ fun ResidenceRegistrationPreview(
 
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text("Họ, chữ đệm và tên chủ hộ:", fontSize = 14.sp)
-                            ResidenceDottedText(data.ownerName, modifier = Modifier.weight(1f))
+                            ResidenceDottedText(data.ownerName!!, modifier = Modifier.weight(1f))
                         }
-                        
+
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text("Mối quan hệ với chủ hộ:", fontSize = 14.sp)
-                            ResidenceDottedText(data.ownerRelation, modifier = Modifier.weight(1f))
+                            ResidenceDottedText(
+                                data.ownerRelation!!,
+                                modifier = Modifier.weight(1f)
+                            )
                         }
 
                         Column {
                             Text("Số định danh cá nhân của chủ hộ:", fontSize = 14.sp)
                             Spacer(modifier = Modifier.height(8.dp))
-                            IdNumberGrid(data.ownerIdNumber)
+                            IdNumberGrid(data.ownerCccd!!)
                         }
 
                         Column {
@@ -185,24 +212,6 @@ fun ResidenceRegistrationPreview(
                         Spacer(modifier = Modifier.height(40.dp))
 
                         // Signature Section
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 24.dp)) {
-                                Text("Người kê khai", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text("(Ký và ghi rõ họ tên)", fontStyle = FontStyle.Italic, fontSize = 12.sp)
-                                Spacer(modifier = Modifier.height(16.dp))
-                                if (data.signatureBitmap != null) {
-                                    Image(
-                                        bitmap = data.signatureBitmap.asImageBitmap(),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(120.dp, 60.dp),
-                                        contentScale = ContentScale.Fit
-                                    )
-                                } else {
-                                    Spacer(modifier = Modifier.height(60.dp))
-                                }
-                                Text(data.fullName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            }
-                        }
                     }
                     Spacer(modifier = Modifier.height(60.dp))
                 }

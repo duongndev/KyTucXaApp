@@ -55,6 +55,7 @@ import com.duongnd.kytucxa.core.ui.components.KTXButton
 import com.duongnd.kytucxa.core.ui.components.KTXDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -141,12 +142,20 @@ fun SplashScreen(
                 is SplashDestination.Home -> onNavigateToHome()
                 is SplashDestination.UpdateProfile -> showCompleteProfileDialog = true
                 is SplashDestination.Registration -> {
-                    // Kiểm tra trực tiếp registrationForm thay vì hasDraft
-                    if (dest.draft?.registrationForm != null) {
+                    val draft = dest.draft
+                    // Kiểm tra tất cả các dấu hiệu của một đơn đang tồn tại
+                    // Chấp nhận progressPercent = 0 là một đơn hợp lệ
+                    val hasExistingDraft = draft != null && (draft.registrationForm != null ||
+                            draft.existingFormId != null || draft.hasDraft || draft.progressPercent != null)
+
+                    Timber.d("hasExistingDraft: $hasExistingDraft")
+
+                    if (hasExistingDraft) {
                         showDraftFoundDialog = true
                     } else {
                         showNoDraftDialog = true
                     }
+
                 }
                 is SplashDestination.Pending -> onNavigateToPending(dest.registrationId!!)
                 is SplashDestination.RequiresSupplement -> onNavigateToRequiresSupplement(dest.registrationId!!)
@@ -177,7 +186,15 @@ fun SplashScreen(
             icon = Icons.Rounded.NetworkCheck,
             iconTint = Color.Red,
             title = "Không có kết nối",
-            description = "Vui lòng kiểm tra kết nối internet của bạn và thử lại.",
+            description = {
+                Text(
+                    text = "Vui lòng kiểm tra kết nối internet của bạn và thử lại.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
             confirmButtonText = "THỬ LẠI",
             onConfirm = {
                 showNoInternetDialog = false
@@ -193,7 +210,15 @@ fun SplashScreen(
             onDismissRequest = { },
             icon = Icons.Rounded.Security,
             title = "Yêu cầu quyền truy cập",
-            description = "Ứng dụng cần quyền Camera, Bộ nhớ và Thông báo để hoạt động đầy đủ tính năng.",
+            description = {
+                Text(
+                    text = "Ứng dụng cần quyền Camera, Bộ nhớ và Thông báo để hoạt động đầy đủ tính năng.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
             confirmButtonText = "CẤP QUYỀN",
             onConfirm = {
                 permissionState.launchMultiplePermissionRequest()
@@ -208,7 +233,15 @@ fun SplashScreen(
             onDismissRequest = { },
             icon = Icons.Rounded.AssignmentInd,
             title = "Hồ sơ chưa hoàn thiện",
-            description = "Vui lòng cập nhật đầy đủ thông tin cá nhân và thông tin sinh viên để tiếp tục sử dụng dịch vụ.",
+            description = {
+                Text(
+                    text = "Vui lòng cập nhật đầy đủ thông tin cá nhân và thông tin sinh viên để tiếp tục sử dụng dịch vụ.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
             confirmButtonText = "CẤP NHẬT NGAY",
             onConfirm = {
                 showCompleteProfileDialog = false
@@ -232,48 +265,60 @@ fun SplashScreen(
         KTXDialog(
             onDismissRequest = { },
             icon = Icons.Rounded.EditNote,
-            title = "Tiếp tục đăng ký?",
-            description = buildString {
-                val name = registration?.userId?.fullName ?: "bạn"
-                val code = registration?.registrationFormCode ?: ""
-                val step = registration?.currentStep ?: 0
-                val progress = draft?.progressPercent ?: 0
+            title = "Tiếp tục nộp hồ sơ?",
+            description = {
+                val content = buildString {
+                    // Ưu tiên lấy thông tin từ registrationForm hoặc existing thông tin
+                    val code = registration?.registrationFormCode ?: draft?.existingFormCode ?: "N/A"
+                    val progressVal = draft?.progressPercent ?: 0
+                    val status = registration?.status ?: draft?.existingStatus ?: "draft"
+                    val step = registration?.currentStep ?: 0
 
-                val statusLabel = when (step) {
-                    0 -> "Mới tạo offline"
-                    1 -> "Đang làm nội trú"
-                    2 -> "Xong nội trú"
-                    3 -> "Xong tạm trú, chờ upload"
-                    4 -> "Đủ tài liệu, có thể submit"
-                    else -> "Đang thực hiện dở dang"
-                }
+                    append("Hệ thống tìm thấy hồ sơ của bạn đang được thực hiện.\n")
+                    append("Mã hồ sơ: $code\n")
+                    append("Trạng thái: ${status.uppercase()}\n")
+                    append("Tiến độ: $progressVal%")
 
-                append("Chào $name, hệ thống tìm thấy hồ sơ của bạn đang được thực hiện.\n\n")
-                append("• Mã hồ sơ: $code\n")
-                append("• Trạng thái: $statusLabel\n")
-                append("• Tiến độ: $progress%")
-                
-                if (step == 4) {
-                    append("\n\nHồ sơ đã sẵn sàng, bạn có thể kiểm tra và nhấn gửi ngay.")
+                    when (step) {
+                        0, 1 -> append("\n\nBạn đang ở bước điền thông tin nội trú.")
+                        2 -> append("\n\nBạn đã xong thông tin nội trú, tiếp theo là thông tin tạm trú.")
+                        3 -> append("\n\nBạn cần tải lên các tài liệu minh chứng để hoàn tất.")
+                        4 -> append("\n\nHồ sơ đã sẵn sàng, bạn có thể kiểm tra và nhấn gửi ngay.")
+                    }
                 }
+                Text(
+                    text = content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             },
             confirmButtonText = "TIẾP TỤC",
             onConfirm = {
                 showDraftFoundDialog = false
-                // Điều hướng chính xác dựa theo bảng trạng thái
-                when (registration?.currentStep) {
-                    0 -> onNavigateToOfflineInstructions()
-                    1 -> onNavigateToStep1Residence()
-                    2 -> onNavigateToStep2Temporary()
-                    3 -> onNavigateToStep3Documents()
-                    4 -> onNavigateToSubmitReady()
-                    else -> onNavigateToRegistration(draft)
+                if (registration != null) {
+                    // Nếu có object registrationForm đầy đủ, điều hướng theo step
+                    when (registration.currentStep) {
+                        0 -> onNavigateToOfflineInstructions()
+                        1 -> onNavigateToStep1Residence()
+                        2 -> onNavigateToStep2Temporary()
+                        3 -> onNavigateToStep3Documents()
+                        4 -> onNavigateToSubmitReady()
+                        else -> onNavigateToRegistration(draft)
+                    }
+                } else {
+                    // Nếu chỉ có ID đơn (trường hợp JSON lỗi nhưng có data), điều hướng về luồng chung
+                    onNavigateToRegistration(draft)
                 }
             },
             dismissButtonText = "LÀM MỚI",
             onDismiss = {
+                val formId = registration?.id ?: draft?.existingFormId
+                if (formId != null) {
+                    viewModel.deleteDraft(formId)
+                }
                 showDraftFoundDialog = false
-                showNoDraftDialog = true
             },
             isCancelable = false
         )
@@ -285,7 +330,15 @@ fun SplashScreen(
             onDismissRequest = { },
             icon = Icons.Rounded.AssignmentInd,
             title = "Đăng ký nội trú",
-            description = "Bạn chưa có đơn đăng ký nội trú nào hoặc đơn cũ đã bị từ chối. Bắt đầu đăng ký ngay để giữ chỗ!",
+            description = {
+                Text(
+                    text = "Bạn chưa có đơn đăng ký nội trú nào hoặc đơn cũ đã bị từ chối. Bắt đầu đăng ký ngay để giữ chỗ!",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
             confirmButtonText = "ĐĂNG KÝ NGAY",
             onConfirm = {
                 showNoDraftDialog = false

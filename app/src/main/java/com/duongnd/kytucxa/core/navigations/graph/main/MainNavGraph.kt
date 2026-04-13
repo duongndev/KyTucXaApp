@@ -42,6 +42,7 @@ import com.duongnd.kytucxa.feature.registration.DocumentUploadScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationFlowScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
 import com.duongnd.kytucxa.feature.registration.residence.ResidenceFormScreen
+import com.duongnd.kytucxa.feature.registration.residence.ResidenceViewModel
 import com.duongnd.kytucxa.feature.room.RoomDetailScreen
 import com.duongnd.kytucxa.feature.room.RoomScreen
 import com.duongnd.kytucxa.feature.support.SupportScreen
@@ -153,7 +154,7 @@ fun MainScreen(rootNavController: NavHostController) {
                     val parentEntry = remember(entry) {
                         rootNavController.getBackStackEntry(Graphs.MAIN)
                     }
-                    val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
+                    val viewModel = hiltViewModel<ResidenceViewModel>(parentEntry)
                     ResidenceFormScreen(
                         viewModel = viewModel,
                         onNext = { navController.navigate(Screen.DocumentUpload.route) },

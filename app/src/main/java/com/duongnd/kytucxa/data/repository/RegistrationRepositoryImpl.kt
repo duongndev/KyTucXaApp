@@ -49,4 +49,11 @@ class RegistrationRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteRegistrationForm(id: String): Flow<Resource<Map<String, Any?>?>> {
+        return handleResponseResource {
+            registrationApi.deleteRegistrationFormApi(id)
+        }
+    }
+
+
 }

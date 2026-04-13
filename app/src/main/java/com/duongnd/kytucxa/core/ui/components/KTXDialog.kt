@@ -25,14 +25,14 @@ import androidx.compose.ui.unit.sp
 fun KTXDialog(
     onDismissRequest: () -> Unit,
     title: String,
-    description: String,
     confirmButtonText: String,
     onConfirm: () -> Unit,
     dismissButtonText: String? = null,
     onDismiss: (() -> Unit)? = null,
     icon: ImageVector? = null,
     iconTint: Color = MaterialTheme.colorScheme.primary,
-    isCancelable: Boolean = true
+    isCancelable: Boolean = true,
+    description: @Composable () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = { if (isCancelable) onDismissRequest() },
@@ -60,13 +60,7 @@ fun KTXDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 20.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                description()
             }
         },
         confirmButton = {

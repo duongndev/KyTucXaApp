@@ -4,9 +4,9 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class RequiredDocuments(
-    val cccdBack: Boolean = false,
-    val cccdFront: Boolean = false,
-    val priorityDoc: Boolean = false,
-    val stampedForm: Boolean = false,
-    val studentCard: Boolean = false
+    val cccdBack: Boolean? = false,
+    val cccdFront: Boolean? = false,
+    val priorityDoc: Boolean? = false,
+    val stampedForm: Boolean? = false,
+    val studentCard: Boolean? = false
 )

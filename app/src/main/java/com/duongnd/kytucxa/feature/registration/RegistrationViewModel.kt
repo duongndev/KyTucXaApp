@@ -8,16 +8,18 @@ import androidx.lifecycle.viewModelScope
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.core.utils.SessionManager
 import com.duongnd.kytucxa.data.remote.dto.auth.me.CurrentUser
-import com.duongnd.kytucxa.domain.models.FormFields
-import com.duongnd.kytucxa.domain.models.ResidenceRegistrationFields
 import com.duongnd.kytucxa.data.remote.dto.registration.draft.DraftResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceDTO
+import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceRequest
+import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceResponse
+import com.duongnd.kytucxa.domain.models.FormFields
+import com.duongnd.kytucxa.domain.models.TemporaryModel
 import com.duongnd.kytucxa.domain.repository.PreviewRepository
 import com.duongnd.kytucxa.domain.repository.RegistrationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
@@ -62,8 +64,13 @@ class RegistrationViewModel @Inject constructor(
     private val _formFields = MutableStateFlow<FormFields?>(null)
     val formFields: StateFlow<FormFields?> = _formFields.asStateFlow()
 
-    private val _residenceRegistrationFields = MutableStateFlow<ResidenceRegistrationFields?>(null)
-    val residenceRegistrationFields: StateFlow<ResidenceRegistrationFields?> = _residenceRegistrationFields.asStateFlow()
+    private val _temporaryModel = MutableStateFlow<TemporaryModel?>(null)
+    val temporaryModel: StateFlow<TemporaryModel?> = _temporaryModel.asStateFlow()
+
+    private val _updateResidenceResult =
+        MutableStateFlow<Resource<ResidenceResponse>>(Resource.Idle)
+    val updateResidenceResult: StateFlow<Resource<ResidenceResponse>> =
+        _updateResidenceResult.asStateFlow()
 
     // Documents state
     private val _idCardFront = MutableStateFlow<Uri?>(null)
@@ -94,7 +101,7 @@ class RegistrationViewModel @Inject constructor(
                     _draft.value = resource.data
                     resource.data.registrationForm?.let { registration ->
                         // 1. Map Residence Form Fields
-                        val residence = registration.formData.residence
+                        val residence = registration.formData?.residence
                         if (residence != null) {
                             _formFields.value = FormFields(
                                 fullName = residence.fullName,
@@ -119,19 +126,19 @@ class RegistrationViewModel @Inject constructor(
                         }
 
                         // 2. Map Temporary Residence Fields
-                        val temporary = registration.formData.temporary
+                        val temporary = registration.formData?.temporary
                         if (temporary != null) {
-                            _residenceRegistrationFields.value = ResidenceRegistrationFields(
-                                receiver = temporary.receiver,
+                            _temporaryModel.value = TemporaryModel(
+                                cccd = temporary.cccd,
                                 fullName = temporary.fullName,
-                                dob = temporary.dateOfBirth,
+                                dateOfBirth = temporary.dateOfBirth,
+                                receiver = temporary.receiver,
+                                ownerCccd = temporary.ownerCccd,
                                 gender = temporary.gender,
-                                idNumber = temporary.cccd,
-                                phoneNumber = temporary.phoneNumber,
                                 email = temporary.email,
-                                ownerName = temporary.ownerName ?: "",
-                                ownerRelation = temporary.ownerRelation ?: "",
-                                ownerIdNumber = temporary.ownerCccd ?: "",
+                                phoneNumber = temporary.phoneNumber,
+                                ownerName = temporary.ownerName,
+                                ownerRelation = temporary.ownerRelation,
                                 requestContent = temporary.requestContent
                             )
                         }
@@ -141,12 +148,59 @@ class RegistrationViewModel @Inject constructor(
         }
     }
 
-    fun updateResidenceRegistrationFields(fields: ResidenceRegistrationFields) {
-        _residenceRegistrationFields.value = fields
+    fun updateResidenceRegistrationFields(fields: TemporaryModel) {
+        _temporaryModel.value = fields
     }
 
     fun updateFormFields(fields: FormFields) {
         _formFields.value = fields
+    }
+
+    fun updateResidenceForm(fields: FormFields) {
+        Timber.d("updateResidenceForm called with fields: $fields")
+        val formId = _draft.value?.existingFormId
+        if (formId == null) {
+            Timber.e("updateResidenceForm failed: existingFormId is null. Current draft: ${_draft.value}")
+            return
+        }
+        viewModelScope.launch {
+            _updateResidenceResult.value = Resource.Loading
+            val request = ResidenceRequest(
+                residenceData = ResidenceDTO(
+                    academicYear = fields.academicYear,
+                    cccd = fields.idNumber,
+                    cccdIdIssueDate = fields.idIssueDate,
+                    cccdIdIssuePlace = fields.idIssuePlace,
+                    className = fields.className,
+                    dateOfBirth = fields.dob,
+                    department = fields.department,
+                    dormName = fields.dormName,
+                    duration = fields.duration,
+                    email = fields.email,
+                    emergencyContact = fields.emergencyContact,
+                    fullName = fields.fullName,
+                    gender = fields.gender,
+                    major = fields.department, // Giả sử major là department nếu không có field riêng
+                    permanentAddress = fields.permanentAddress,
+                    phoneNumber = fields.phoneNumber,
+                    schoolName = fields.schoolName,
+                    studentId = fields.studentId
+                )
+            )
+            Timber.d("Sending ResidenceRequest: $request to FormID: $formId")
+            registrationRepository.updateResidenceForm(formId, request).collect { resource ->
+                _updateResidenceResult.value = resource
+                when (resource) {
+                    is Resource.Success -> Timber.i("Update Residence success")
+                    is Resource.Error -> Timber.e("Update Residence error: ${resource.message}")
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    fun resetUpdateResidenceResult() {
+        _updateResidenceResult.value = Resource.Idle
     }
 
     fun updateIdCardFront(uri: Uri?) {

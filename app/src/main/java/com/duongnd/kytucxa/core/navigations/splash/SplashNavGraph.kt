@@ -65,7 +65,7 @@ fun NavGraphBuilder.splashNavGraph(navController: NavHostController) {
                     }
                 },
                 onNavigateToStep2Temporary = {
-                    navController.navigate(Screen.ResidenceRegistration.route) {
+                    navController.navigate(Screen.TemporaryForm.route) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
                 },

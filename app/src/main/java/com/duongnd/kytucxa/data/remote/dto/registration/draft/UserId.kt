@@ -7,9 +7,9 @@ import com.squareup.moshi.JsonClass
 data class UserId(
     @Json(name = "_id")
     val id: String?,
-    val address: String,
-    val email: String,
-    val fullName: String,
-    val phone: String,
-    val studentCode: String
+    val address: String?,
+    val email: String?,
+    val fullName: String?,
+    val phone: String?,
+    val studentCode: String?,
 )

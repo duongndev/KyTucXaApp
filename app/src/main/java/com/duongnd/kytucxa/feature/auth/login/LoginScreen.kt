@@ -116,7 +116,15 @@ fun LoginScreen(
             icon = if (isNotVerified) Icons.Rounded.VerifiedUser else Icons.Rounded.ErrorOutline,
             iconTint = if (isNotVerified) primaryColor else MaterialTheme.colorScheme.error,
             title = if (isNotVerified) "Xác thực tài khoản" else "Đăng nhập thất bại",
-            description = loginUiState.errorMessage ?: "Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.",
+            description = {
+                Text(
+                    text = loginUiState.errorMessage ?: "Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
             confirmButtonText = if (isNotVerified) "XÁC THỰC NGAY" else "ĐÓNG",
             onConfirm = {
                 showErrorDialog = false
@@ -143,7 +151,15 @@ fun LoginScreen(
             },
             icon = Icons.Rounded.Info,
             title = "Hoàn thiện hồ sơ",
-            description = "Thông tin cá nhân hoặc thông tin sinh viên của bạn còn thiếu. Vui lòng cập nhật để tiếp tục.",
+            description = {
+                Text(
+                    text = "Thông tin cá nhân hoặc thông tin sinh viên của bạn còn thiếu. Vui lòng cập nhật để tiếp tục.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
             confirmButtonText = "CẬP NHẬT NGAY",
             onConfirm = {
                 showUpdateProfileDialog = false
@@ -162,7 +178,15 @@ fun LoginScreen(
             },
             icon = Icons.Rounded.Assignment,
             title = "Nộp hồ sơ đăng ký",
-            description = "Thông tin của bạn đã đầy đủ. Vui lòng hoàn tất nộp hồ sơ để Ban quản lý xét duyệt phòng.",
+            description = {
+                Text(
+                    text = "Thông tin của bạn đã đầy đủ. Vui lòng hoàn tất nộp hồ sơ để Ban quản lý xét duyệt phòng.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
             confirmButtonText = "NỘP HỒ SƠ NGAY",
             onConfirm = {
                 showRegistrationDialog = false

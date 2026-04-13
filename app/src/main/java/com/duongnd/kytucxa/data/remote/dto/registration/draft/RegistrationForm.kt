@@ -1,11 +1,13 @@
 package com.duongnd.kytucxa.data.remote.dto.registration.draft
 
 import com.duongnd.kytucxa.data.remote.dto.registration.FormData
+import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class RegistrationForm(
-    val _id: String,
+    @Json(name = "_id")
+    val id: String?,
     val approvedAt: Any,
     val canSubmitWithoutStamp: Boolean,
     val completedSteps: List<Int>,

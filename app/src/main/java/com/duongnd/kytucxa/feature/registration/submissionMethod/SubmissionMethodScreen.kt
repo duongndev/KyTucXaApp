@@ -40,12 +40,45 @@ import com.duongnd.kytucxa.domain.models.SubmissionMethod
 fun SubmissionMethodScreen(
     onOnlineSelected: () -> Unit,
     onDirectSelected: () -> Unit,
+    onContinueExistingForm: (String) -> Unit,
     onExit: () -> Unit,
     viewModel: SubmissionMethodViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val primaryColor = Color(0xFF0047BB)
+
+    // Dialog thông báo đơn cũ
+    if (state.existingFormId != null) {
+        AlertDialog(
+            onDismissRequest = { /* Không cho phép dismiss bằng cách click ra ngoài */ },
+            title = { Text("Thông báo", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text(state.error ?: "Bạn đã có một đơn đăng ký đang xử lý.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Mã đơn: ${state.existingFormCode}",
+                        fontWeight = FontWeight.Bold,
+                        color = primaryColor
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { onContinueExistingForm(state.existingFormId!!) },
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                ) {
+                    Text("Tiếp tục đơn cũ")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onExit) {
+                    Text("Quay lại", color = Color.Gray)
+                }
+            }
+        )
+    }
 
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
@@ -273,14 +306,3 @@ fun MethodCard(
 }
 
 
-
-@Preview(showBackground = true)
-@Composable
-fun SubmissionMethodScreenPreview() {
-    SubmissionMethodScreen(
-        onDirectSelected = {},
-        onOnlineSelected = {},
-        onExit = {},
-        viewModel = hiltViewModel()
-    )
-}

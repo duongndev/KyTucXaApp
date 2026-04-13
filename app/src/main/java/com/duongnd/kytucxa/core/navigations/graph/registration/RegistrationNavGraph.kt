@@ -30,6 +30,10 @@ fun NavGraphBuilder.registrationNavGraph(navController: NavHostController) {
                 onDirectSelected = {
                     navController.navigate(Screen.DirectSubmissionGuide.route)
                 },
+                onContinueExistingForm = { formId ->
+                    // Bạn có thể truyền formId qua SavedStateHandle hoặc điều hướng thẳng
+                    navController.navigate(Screen.RegistrationForm.route)
+                },
                 onExit = {
                     navController.popBackStack()
                 }

@@ -80,6 +80,9 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
             SubmissionMethodScreen(
                 onOnlineSelected = { navController.navigate(Screen.AvatarUpload.route) },
                 onDirectSelected = { navController.navigate(Screen.DirectSubmissionGuide.route) },
+                onContinueExistingForm = { formId ->
+                    navController.navigate(Screen.AvatarUpload.route)
+                },
                 onExit = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Graphs.AUTH) { inclusive = true }

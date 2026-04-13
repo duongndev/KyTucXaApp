@@ -53,6 +53,31 @@ fun NavGraphBuilder.splashNavGraph(navController: NavHostController) {
                     navController.navigate(Screen.DocumentUpload.route) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
+                },
+                onNavigateToOfflineInstructions = {
+                    navController.navigate(Screen.DirectSubmissionGuide.route) {
+                        popUpTo(Graphs.SPLASH) { inclusive = true }
+                    }
+                },
+                onNavigateToStep1Residence = {
+                    navController.navigate(Screen.RegistrationForm.route) {
+                        popUpTo(Graphs.SPLASH) { inclusive = true }
+                    }
+                },
+                onNavigateToStep2Temporary = {
+                    navController.navigate(Screen.ResidenceRegistration.route) {
+                        popUpTo(Graphs.SPLASH) { inclusive = true }
+                    }
+                },
+                onNavigateToStep3Documents = {
+                    navController.navigate(Screen.DocumentUpload.route) {
+                        popUpTo(Graphs.SPLASH) { inclusive = true }
+                    }
+                },
+                onNavigateToSubmitReady = {
+                    navController.navigate(Screen.RegistrationFlow.route) {
+                        popUpTo(Graphs.SPLASH) { inclusive = true }
+                    }
                 }
             )
         }

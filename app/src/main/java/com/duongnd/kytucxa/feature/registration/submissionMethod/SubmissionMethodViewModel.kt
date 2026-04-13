@@ -51,7 +51,16 @@ class SubmissionMethodViewModel @Inject constructor(
                         _state.update { it.copy(isLoading = false, isSuccess = true) }
                     }
                     is Resource.Error -> {
-                        _state.update { it.copy(isLoading = false, error = result.message) }
+                        val existingData = result.data as? com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationResponse
+                        _state.update { 
+                            it.copy(
+                                isLoading = false, 
+                                error = result.message,
+                                existingFormId = existingData?.existingFormId,
+                                existingFormCode = existingData?.existingFormCode,
+                                existingStatus = existingData?.existingStatus
+                            ) 
+                        }
                     }
                 }
             }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.core.utils.SessionManager
 import com.duongnd.kytucxa.data.remote.dto.auth.me.CurrentUser
+import com.duongnd.kytucxa.data.remote.dto.registration.RegistrationStatus
 import com.duongnd.kytucxa.domain.repository.AuthRepository
 import com.duongnd.kytucxa.domain.repository.RegistrationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -129,43 +130,40 @@ class SplashViewModel @Inject constructor(
             registrationRepository.getCurrentDraft().first { it !is Resource.Loading }
 
         if (draftResource is Resource.Success) {
-            val draft = draftResource.data
-            val registration = draft.registrationForm
-            
-            if (registration == null) {
-                // Trường hợp hasDraft = false (hoặc null) -> Chọn phương thức
-                _destination.value = SplashDestination.Registration()
+            val response = draftResource.data
+            val registration = response.registrationForm
+
+            // 1. Kiểm tra đã bắt đầu chưa (hasDraft)
+            if (!response.hasDraft || registration == null) {
+                _destination.value = SplashDestination.Registration(null)
                 return
             }
 
-            when (registration.status) {
-                "DRAFT" -> {
-                    // DRAFT -> Hiển thị dialog hỏi tiếp tục (resume theo currentStep)
-                    _destination.value = SplashDestination.Registration(draft)
-                }
-                "PENDING" -> {
-                    // PENDING -> Màn chờ duyệt (RegistrationFlowScreen)
-                    _destination.value = SplashDestination.Pending(registration._id)
-                }
-                "REQUIRES_SUPPLEMENT" -> {
-                    // REQUIRES_SUPPLEMENT -> Upload bổ sung
-                    _destination.value = SplashDestination.RequiresSupplement(registration._id)
-                }
-                "APPROVED" -> {
-                    // APPROVED -> Home
-                    _destination.value = SplashDestination.Home
-                }
-                "REJECTED" -> {
-                    // REJECTED -> Cho phép tạo lại hồ sơ (vào màn hình chọn phương thức)
-                    _destination.value = SplashDestination.Rejected(null)
-                }
-                else -> {
-                    _destination.value = SplashDestination.Registration()
+            // 2. Nếu là bản nháp (DRAFT), thông báo để hiển thị Dialog
+            if (registration.status.equals(RegistrationStatus.DRAFT.name, ignoreCase = true)) {
+                _destination.value = SplashDestination.Registration(response)
+            } else {
+                // Các trạng thái khác (PENDING, APPROVED, v.v.)
+                when {
+                    registration.status.equals(RegistrationStatus.PENDING.name, ignoreCase = true) -> {
+                        _destination.value = SplashDestination.Pending(registration.id)
+                    }
+                    registration.status.equals(RegistrationStatus.REQUIRES_SUPPLEMENT.name, ignoreCase = true) -> {
+                        _destination.value = SplashDestination.RequiresSupplement(registration.id)
+                    }
+                    registration.status.equals(RegistrationStatus.APPROVED.name, ignoreCase = true) -> {
+                        _destination.value = SplashDestination.Home
+                    }
+                    registration.status.equals(RegistrationStatus.REJECTED.name, ignoreCase = true) -> {
+                        _destination.value = SplashDestination.Registration(null)
+                    }
+                    else -> {
+                        _destination.value = SplashDestination.Home
+                    }
                 }
             }
         } else {
-            // Nếu lỗi API draft, vẫn cho vào màn hình Registration mặc định
-            _destination.value = SplashDestination.Registration()
+            _destination.value = SplashDestination.Registration(null)
         }
     }
 

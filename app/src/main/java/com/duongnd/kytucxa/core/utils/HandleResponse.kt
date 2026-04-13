@@ -31,7 +31,7 @@ inline fun <T> handleResponseResource(
                 val data = body.data as T
                 emit(Resource.Success(data, body.message))
             } else {
-                emit(Resource.Error(body.message))
+                emit(Resource.Error(body.message, body.data))
             }
 
         } else {

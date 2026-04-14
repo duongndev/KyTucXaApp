@@ -21,14 +21,20 @@ import com.duongnd.kytucxa.core.utils.Resource
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HtmlPreviewScreen(
-    viewModel: RegistrationViewModel = hiltViewModel(),
+    viewModel: RegistrationViewModel,
+    formId: String,
+    type: String,
     onBack: () -> Unit
 ) {
     val previewState by viewModel.previewHtml.collectAsState()
 
     // Gọi API lấy bản xem trước khi vào màn hình
-    LaunchedEffect(Unit) {
-        viewModel.getPreviewTamTru()
+    LaunchedEffect(formId, type) {
+        if (type == "residence") {
+            viewModel.getPreviewNoiTru(formId)
+        } else {
+            viewModel.getPreviewTamTru(formId)
+        }
     }
 
     // Reset trạng thái khi thoát màn hình
@@ -46,9 +52,12 @@ fun HtmlPreviewScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White
+                )
             )
-        }
+        },
     ) { padding ->
         Box(
             modifier = Modifier
@@ -72,12 +81,18 @@ fun HtmlPreviewScreen(
                                     ViewGroup.LayoutParams.MATCH_PARENT
                                 )
                                 webViewClient = WebViewClient()
+                                setBackgroundColor(android.graphics.Color.WHITE)
+
+                                // Cấu hình zoom nhỏ nhất
+                                setInitialScale(1) // Ép WebView thu nhỏ hết mức để vừa chiều rộng
+
                                 settings.apply {
                                     javaScriptEnabled = true
                                     loadWithOverviewMode = true
                                     useWideViewPort = true
                                     builtInZoomControls = true
                                     displayZoomControls = false
+                                    setSupportZoom(true)
                                 }
                             }
                         },
@@ -104,7 +119,13 @@ fun HtmlPreviewScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = { viewModel.getPreviewTamTru() },
+                            onClick = {
+                                if (type == "residence") {
+                                    viewModel.getPreviewNoiTru(formId)
+                                } else {
+                                    viewModel.getPreviewTamTru(formId)
+                                }
+                            },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF0047BB)
                             )

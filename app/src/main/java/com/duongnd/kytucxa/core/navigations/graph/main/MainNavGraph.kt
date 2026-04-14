@@ -38,7 +38,7 @@ import com.duongnd.kytucxa.feature.home.HomeScreen
 import com.duongnd.kytucxa.feature.payment.PaymentHistoryScreen
 import com.duongnd.kytucxa.feature.payment.PaymentScreen
 import com.duongnd.kytucxa.feature.profile.ProfileScreen
-import com.duongnd.kytucxa.feature.registration.DocumentUploadScreen
+import com.duongnd.kytucxa.feature.registration.uploadDocument.DocumentUploadScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationFlowScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
 import com.duongnd.kytucxa.feature.registration.residence.ResidenceFormScreen

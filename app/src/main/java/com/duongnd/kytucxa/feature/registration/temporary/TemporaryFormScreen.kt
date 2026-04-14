@@ -1,34 +1,17 @@
 package com.duongnd.kytucxa.feature.registration.temporary
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Visibility
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.duongnd.kytucxa.core.ui.components.StepIndicator
 import com.duongnd.kytucxa.core.ui.components.CccdOtpInputField
 import com.duongnd.kytucxa.core.ui.components.KTXButton
 import com.duongnd.kytucxa.core.ui.components.KTXDialog
@@ -45,7 +29,6 @@ import com.duongnd.kytucxa.core.ui.components.KTXTextField
 import com.duongnd.kytucxa.core.utils.DateUtils
 import com.duongnd.kytucxa.core.utils.GenderUtils
 import com.duongnd.kytucxa.core.utils.Resource
-import com.duongnd.kytucxa.feature.registration.HtmlPreviewScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,8 +41,6 @@ fun TemporaryFormScreen(
     val updateResult by viewModel.updateResult.collectAsState()
     val temporary = uiState.temporary
 
-    var showPreview by remember { mutableStateOf(false) }
-
     // Xử lý điều hướng khi cập nhật thành công
     LaunchedEffect(updateResult) {
         if (updateResult is Resource.Success) {
@@ -70,34 +51,35 @@ fun TemporaryFormScreen(
 
     val primaryColor = Color(0xFF0047BB)
 
-    if (showPreview) {
-        HtmlPreviewScreen(
-            onBack = { showPreview = false }
-        )
-    } else {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Tờ khai cư trú", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { showPreview = true }) {
-                            Icon(Icons.Rounded.Visibility, contentDescription = "Xem trước")
-                        }
+    // Handle System Back Press
+    BackHandler {
+        onBack()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Tờ khai cư trú", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
                     }
-                )
-            }
-        ) { padding ->
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            StepIndicator(currentStep = 2)
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
                     .verticalScroll(rememberScrollState())
-                    .padding(24.dp)
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
             ) {
                 // Header Section
                 Column(
@@ -172,7 +154,9 @@ fun TemporaryFormScreen(
                 // CCCD Input - OTP Style
                 CccdOtpInputField(
                     value = temporary.cccd,
-                    onValueChange = { if (it.length <= 12) viewModel.updateTemporary { copy(cccd = it) } },
+                    onValueChange = {
+                        if (it.length <= 12) viewModel.updateTemporary { copy(cccd = it) }
+                    },
                     label = "Số định danh cá nhân (CCCD)"
                 )
 
@@ -233,7 +217,9 @@ fun TemporaryFormScreen(
                     value = temporary.requestContent,
                     onValueChange = { viewModel.updateTemporary { copy(requestContent = it) } },
                     placeholder = "Nội dung đề nghị",
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
                     singleLine = false
                 )
 

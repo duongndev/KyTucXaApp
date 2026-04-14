@@ -15,7 +15,7 @@ import com.duongnd.kytucxa.feature.auth.register.AvatarUploadScreen
 import com.duongnd.kytucxa.feature.auth.verify.EmailVerificationScreen
 import com.duongnd.kytucxa.feature.auth.register.RegisterScreen
 import com.duongnd.kytucxa.feature.registration.submissionMethod.DirectSubmissionScreen
-import com.duongnd.kytucxa.feature.registration.DocumentUploadScreen
+import com.duongnd.kytucxa.feature.registration.uploadDocument.DocumentUploadScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationSuccessScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
 import com.duongnd.kytucxa.feature.registration.submissionMethod.SubmissionMethodScreen

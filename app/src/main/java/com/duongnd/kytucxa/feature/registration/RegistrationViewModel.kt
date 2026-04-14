@@ -1,5 +1,6 @@
 package com.duongnd.kytucxa.feature.registration
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Base64
@@ -17,6 +18,7 @@ import com.duongnd.kytucxa.domain.models.TemporaryModel
 import com.duongnd.kytucxa.domain.repository.PreviewRepository
 import com.duongnd.kytucxa.domain.repository.RegistrationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +29,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RegistrationViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val sessionManager: SessionManager,
     private val previewRepository: PreviewRepository,
     private val registrationRepository: RegistrationRepository
@@ -40,10 +43,19 @@ class RegistrationViewModel @Inject constructor(
     private val _previewHtml = MutableStateFlow<Resource<String>>(Resource.Idle)
     val previewHtml: StateFlow<Resource<String>> = _previewHtml.asStateFlow()
 
-    fun getPreviewTamTru() {
+    fun getPreviewTamTru(formId: String) {
         viewModelScope.launch {
             _previewHtml.value = Resource.Loading
-            previewRepository.getPreviewTamTru("don_tam_tru_KTX").collect { resource ->
+            previewRepository.getPreviewTemporary(formId).collect { resource ->
+                _previewHtml.value = resource
+            }
+        }
+    }
+
+    fun getPreviewNoiTru(formId: String) {
+        viewModelScope.launch {
+            _previewHtml.value = Resource.Loading
+            previewRepository.getPreviewResidence(formId).collect { resource ->
                 _previewHtml.value = resource
             }
         }
@@ -53,7 +65,7 @@ class RegistrationViewModel @Inject constructor(
         val byteArrayOutputStream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
         val byteArray = byteArrayOutputStream.toByteArray()
-        return Base64.encodeToString(byteArray, Base64.DEFAULT)
+        return Base64.encodeToString(byteArray, Base64.NO_WRAP)
     }
 
     fun resetPreview() {
@@ -72,6 +84,9 @@ class RegistrationViewModel @Inject constructor(
     val updateResidenceResult: StateFlow<Resource<ResidenceResponse>> =
         _updateResidenceResult.asStateFlow()
 
+    private val _uploadDocsResult = MutableStateFlow<Resource<Unit>>(Resource.Idle)
+    val uploadDocsResult: StateFlow<Resource<Unit>> = _uploadDocsResult.asStateFlow()
+
     // Documents state
     private val _idCardFront = MutableStateFlow<Uri?>(null)
     val idCardFront: StateFlow<Uri?> = _idCardFront.asStateFlow()
@@ -85,9 +100,37 @@ class RegistrationViewModel @Inject constructor(
     private val _priorityDoc = MutableStateFlow<Uri?>(null)
     val priorityDoc: StateFlow<Uri?> = _priorityDoc.asStateFlow()
 
+    private val _signatureBitmap = MutableStateFlow<Bitmap?>(null)
+    val signatureBitmap: StateFlow<Bitmap?> = _signatureBitmap.asStateFlow()
+
+    private val _signatureBase64 = MutableStateFlow<String?>(null)
+    val signatureBase64: StateFlow<String?> = _signatureBase64.asStateFlow()
+
+    private val _isConfirmed = MutableStateFlow(false)
+    val isConfirmed: StateFlow<Boolean> = _isConfirmed.asStateFlow()
+
     init {
         loadUser()
         loadCurrentDraft()
+    }
+
+    fun updateSignature(bitmap: Bitmap?) {
+        _signatureBitmap.value = bitmap
+        _signatureBase64.value = bitmap?.let { bitmapToBase64(it) }
+        if (bitmap != null) {
+            Timber.d(_signatureBase64.value)
+        }
+    }
+
+    fun setConfirmed(confirmed: Boolean) {
+        _isConfirmed.value = confirmed
+    }
+
+    fun submitRegistration() {
+        // Logic gửi đơn tổng hợp lên server
+        viewModelScope.launch {
+            // ... gọi repository.submitFinalRegistration(...)
+        }
     }
 
     private fun loadUser() {
@@ -217,5 +260,26 @@ class RegistrationViewModel @Inject constructor(
 
     fun updatePriorityDoc(uri: Uri?) {
         _priorityDoc.value = uri
+    }
+
+    fun uploadDocuments() {
+        val front = _idCardFront.value
+        val back = _idCardBack.value
+        val student = _studentCard.value
+
+        if (front == null || back == null || student == null) return
+
+        viewModelScope.launch {
+            _uploadDocsResult.value = Resource.Loading
+            
+            // Giả lập logic chuyển đổi và upload
+            // Trong thực tế sẽ gọi registrationRepository.uploadDocuments(...)
+            kotlinx.coroutines.delay(2000)
+            _uploadDocsResult.value = Resource.Success(Unit)
+        }
+    }
+
+    fun resetUploadDocsResult() {
+        _uploadDocsResult.value = Resource.Idle
     }
 }

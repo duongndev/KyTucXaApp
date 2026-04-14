@@ -5,6 +5,7 @@ import com.duongnd.kytucxa.core.utils.handleResponseResource
 import com.duongnd.kytucxa.data.remote.api.RegistrationApi
 import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.document.UploadDocumentResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.draft.DraftResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceResponse
@@ -12,6 +13,9 @@ import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryReque
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryResponse
 import com.duongnd.kytucxa.domain.repository.RegistrationRepository
 import kotlinx.coroutines.flow.Flow
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -55,5 +59,22 @@ class RegistrationRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateDocumentForm(
+        formId: String,
+        image: MultipartBody.Part,
+        type: String,
+        note: String?
+    ): Flow<Resource<UploadDocumentResponse>> {
+        val typeBody = type.toRequestBody("text/plain".toMediaTypeOrNull())
+        val noteBody = note?.toRequestBody("text/plain".toMediaTypeOrNull())
 
+        return handleResponseResource {
+            registrationApi.updateDocumentFormApi(
+                formId = formId,
+                image = image,
+                type = typeBody,
+                note = noteBody
+            )
+        }
+    }
 }

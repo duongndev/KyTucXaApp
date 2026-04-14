@@ -1,8 +1,8 @@
 package com.duongnd.kytucxa.feature.registration.residence
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -16,9 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.duongnd.kytucxa.core.ui.components.CccdOtpInputField
-import com.duongnd.kytucxa.core.ui.components.KTXButton
-import com.duongnd.kytucxa.core.ui.components.KTXTextField
+import com.duongnd.kytucxa.core.ui.components.*
 import com.duongnd.kytucxa.core.utils.DateUtils
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.domain.models.FormFields
@@ -33,9 +31,36 @@ fun ResidenceFormScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val updateResult by viewModel.updateResult.collectAsState()
+    var showExitDialog by remember { mutableStateOf(false) }
 
-    var showPreview by remember { mutableStateOf(false) }
     val primaryColor = Color(0xFF0047BB)
+
+    // Handle System Back Press
+    BackHandler {
+        showExitDialog = true
+    }
+
+    // Exit Confirmation Dialog
+    if (showExitDialog) {
+        KTXDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = "Thoát đăng ký?",
+            description = {
+                Text(
+                    "Dữ liệu bạn vừa nhập chưa được lưu chính thức. Bạn có chắc chắn muốn quay lại màn hình trước đó?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+            },
+            confirmButtonText = "THOÁT",
+            onConfirm = {
+                showExitDialog = false
+                onBack()
+            },
+            dismissButtonText = "Ở LẠI",
+            onDismiss = { showExitDialog = false }
+        )
+    }
 
     // Xử lý chuyển trang khi submit thành công
     LaunchedEffect(updateResult) {
@@ -44,51 +69,30 @@ fun ResidenceFormScreen(
         }
     }
 
-    if (showPreview) {
-        val res = uiState.residence
-        ElectronicFormView(
-            data = FormFields(
-                fullName = res.fullName,
-                gender = res.gender,
-                dob = res.dateOfBirth,
-                idNumber = res.cccd,
-                idIssueDate = res.cccdIdIssueDate,
-                idIssuePlace = res.cccdIdIssuePlace,
-                permanentAddress = res.permanentAddress,
-                phoneNumber = res.phoneNumber,
-                email = res.email,
-                emergencyContact = res.emergencyContact,
-                schoolName = res.schoolName,
-                academicYear = res.academicYear,
-                className = res.className,
-                department = res.department,
-                studentId = res.studentId,
-                priorityType = uiState.priorityType,
-                dormName = res.dormName,
-                duration = res.duration,
-                signatureBitmap = uiState.signatureBitmap
-            ),
-            onBack = { showPreview = false }
-        )
-    } else {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Đơn đăng ký thuê nhà ở", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
-                        }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Đơn đăng ký thuê nhà ở", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { showExitDialog = true }) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
                     }
-                )
-            }
-        ) { padding ->
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            StepIndicator(currentStep = 1)
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
                     .verticalScroll(rememberScrollState())
-                    .padding(24.dp)
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
             ) {
                 // Header: Quốc hiệu tiêu ngữ
                 HeaderSection(primaryColor)
@@ -98,27 +102,27 @@ fun ResidenceFormScreen(
                 // Section I: THÔNG TIN CÁ NHÂN
                 Text("I. THÔNG TIN CÁ NHÂN", fontWeight = FontWeight.Bold, color = primaryColor)
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 KTXTextField(
                     value = uiState.residence.fullName,
-                    onValueChange = { newValue -> 
+                    onValueChange = { newValue ->
                         viewModel.updateResidence { copy(fullName = newValue) }
                     },
                     placeholder = "Họ và tên",
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 GenderSelectionRow(
                     selectedGender = uiState.residence.gender,
                     onGenderSelected = { newValue ->
                         viewModel.updateResidence { copy(gender = newValue) }
                     }
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 KTXTextField(
                     value = DateUtils.formatString(uiState.residence.dateOfBirth),
                     onValueChange = { newValue ->
@@ -127,9 +131,9 @@ fun ResidenceFormScreen(
                     placeholder = "Ngày sinh",
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 CccdOtpInputField(
                     value = uiState.residence.cccd,
                     onValueChange = { newValue ->
@@ -139,7 +143,7 @@ fun ResidenceFormScreen(
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Row(modifier = Modifier.fillMaxWidth()) {
                     KTXTextField(
                         value = uiState.residence.cccdIdIssueDate,
@@ -147,7 +151,9 @@ fun ResidenceFormScreen(
                             viewModel.updateResidence { copy(cccdIdIssueDate = newValue) }
                         },
                         placeholder = "Ngày cấp",
-                        modifier = Modifier.weight(1f).padding(end = 8.dp)
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp)
                     )
                     KTXTextField(
                         value = uiState.residence.cccdIdIssuePlace,
@@ -158,9 +164,9 @@ fun ResidenceFormScreen(
                         modifier = Modifier.weight(1.5f)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 KTXTextField(
                     value = uiState.residence.permanentAddress,
                     onValueChange = { newValue ->
@@ -169,9 +175,9 @@ fun ResidenceFormScreen(
                     placeholder = "Hộ khẩu thường trú",
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 KTXTextField(
                     value = uiState.residence.phoneNumber,
                     onValueChange = { newValue ->
@@ -180,7 +186,7 @@ fun ResidenceFormScreen(
                     placeholder = "Điện thoại",
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
 
                 KTXTextField(
@@ -191,9 +197,9 @@ fun ResidenceFormScreen(
                     placeholder = "Email",
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 KTXTextField(
                     value = uiState.residence.emergencyContact,
                     onValueChange = { newValue ->
@@ -208,7 +214,7 @@ fun ResidenceFormScreen(
                 // Section II: THÔNG TIN ĐÀO TẠO
                 Text("II. THÔNG TIN ĐÀO TẠO", fontWeight = FontWeight.Bold, color = primaryColor)
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 KTXTextField(
                     value = uiState.residence.schoolName,
                     onValueChange = { newValue ->
@@ -217,9 +223,9 @@ fun ResidenceFormScreen(
                     placeholder = "Cơ sở đào tạo",
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Row(modifier = Modifier.fillMaxWidth()) {
                     KTXTextField(
                         value = uiState.residence.academicYear,
@@ -227,7 +233,9 @@ fun ResidenceFormScreen(
                             viewModel.updateResidence { copy(academicYear = newValue) }
                         },
                         placeholder = "Niên khóa",
-                        modifier = Modifier.weight(1f).padding(end = 8.dp)
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp)
                     )
                     KTXTextField(
                         value = uiState.residence.className,
@@ -238,9 +246,9 @@ fun ResidenceFormScreen(
                         modifier = Modifier.weight(1f)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 KTXTextField(
                     value = uiState.residence.department,
                     onValueChange = { newValue ->
@@ -249,9 +257,9 @@ fun ResidenceFormScreen(
                     placeholder = "Khoa",
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 KTXTextField(
                     value = uiState.residence.major,
                     onValueChange = { newValue ->
@@ -260,9 +268,9 @@ fun ResidenceFormScreen(
                     placeholder = "Chuyên ngành",
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 KTXTextField(
                     value = uiState.residence.studentId,
                     onValueChange = { newValue ->
@@ -271,9 +279,9 @@ fun ResidenceFormScreen(
                     placeholder = "Mã sinh viên",
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 KTXTextField(
                     value = uiState.priorityType,
                     onValueChange = { viewModel.updatePriorityType(it) },
@@ -286,7 +294,7 @@ fun ResidenceFormScreen(
                 // Section III: NỘI DUNG ĐỀ NGHỊ
                 Text("III. NỘI DUNG ĐỀ NGHỊ", fontWeight = FontWeight.Bold, color = primaryColor)
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 KTXTextField(
                     value = uiState.residence.dormName,
                     onValueChange = { newValue ->
@@ -295,9 +303,9 @@ fun ResidenceFormScreen(
                     placeholder = "Đăng ký tại KTX",
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 KTXTextField(
                     value = uiState.residence.duration,
                     onValueChange = { newValue ->
@@ -320,16 +328,18 @@ fun ResidenceFormScreen(
                     enabled = uiState.isFormValid && updateResult !is Resource.Loading,
                     isLoading = updateResult is Resource.Loading
                 )
-                
+
                 if (updateResult is Resource.Error) {
                     Text(
                         text = (updateResult as Resource.Error).message ?: "Có lỗi xảy ra",
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
@@ -364,12 +374,20 @@ fun GenderSelectionRow(selectedGender: String, onGenderSelected: (String) -> Uni
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("Giới tính", fontWeight = FontWeight.Medium, modifier = Modifier.padding(8.dp).weight(1f))
+        Text(
+            "Giới tính",
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier
+                .padding(8.dp)
+                .weight(1f)
+        )
         FilterChip(
             selected = selectedGender == "male",
             onClick = { onGenderSelected("male") },
             label = { Text("Nam") },
-            modifier = Modifier.weight(1f).padding(end = 8.dp)
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 8.dp)
         )
         FilterChip(
             selected = selectedGender == "female",

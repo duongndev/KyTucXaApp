@@ -23,8 +23,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import javax.inject.Inject
 
 @HiltViewModel
@@ -84,28 +89,6 @@ class RegistrationViewModel @Inject constructor(
     val updateResidenceResult: StateFlow<Resource<ResidenceResponse>> =
         _updateResidenceResult.asStateFlow()
 
-    private val _uploadDocsResult = MutableStateFlow<Resource<Unit>>(Resource.Idle)
-    val uploadDocsResult: StateFlow<Resource<Unit>> = _uploadDocsResult.asStateFlow()
-
-    // Documents state
-    private val _idCardFront = MutableStateFlow<Uri?>(null)
-    val idCardFront: StateFlow<Uri?> = _idCardFront.asStateFlow()
-
-    private val _idCardBack = MutableStateFlow<Uri?>(null)
-    val idCardBack: StateFlow<Uri?> = _idCardBack.asStateFlow()
-
-    private val _studentCard = MutableStateFlow<Uri?>(null)
-    val studentCard: StateFlow<Uri?> = _studentCard.asStateFlow()
-
-    private val _priorityDoc = MutableStateFlow<Uri?>(null)
-    val priorityDoc: StateFlow<Uri?> = _priorityDoc.asStateFlow()
-
-    private val _signatureBitmap = MutableStateFlow<Bitmap?>(null)
-    val signatureBitmap: StateFlow<Bitmap?> = _signatureBitmap.asStateFlow()
-
-    private val _signatureBase64 = MutableStateFlow<String?>(null)
-    val signatureBase64: StateFlow<String?> = _signatureBase64.asStateFlow()
-
     private val _isConfirmed = MutableStateFlow(false)
     val isConfirmed: StateFlow<Boolean> = _isConfirmed.asStateFlow()
 
@@ -121,6 +104,12 @@ class RegistrationViewModel @Inject constructor(
             Timber.d(_signatureBase64.value)
         }
     }
+
+    private val _signatureBitmap = MutableStateFlow<Bitmap?>(null)
+    val signatureBitmap: StateFlow<Bitmap?> = _signatureBitmap.asStateFlow()
+
+    private val _signatureBase64 = MutableStateFlow<String?>(null)
+    val signatureBase64: StateFlow<String?> = _signatureBase64.asStateFlow()
 
     fun setConfirmed(confirmed: Boolean) {
         _isConfirmed.value = confirmed
@@ -189,97 +178,5 @@ class RegistrationViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun updateResidenceRegistrationFields(fields: TemporaryModel) {
-        _temporaryModel.value = fields
-    }
-
-    fun updateFormFields(fields: FormFields) {
-        _formFields.value = fields
-    }
-
-    fun updateResidenceForm(fields: FormFields) {
-        Timber.d("updateResidenceForm called with fields: $fields")
-        val formId = _draft.value?.existingFormId
-        if (formId == null) {
-            Timber.e("updateResidenceForm failed: existingFormId is null. Current draft: ${_draft.value}")
-            return
-        }
-        viewModelScope.launch {
-            _updateResidenceResult.value = Resource.Loading
-            val request = ResidenceRequest(
-                residenceData = ResidenceDTO(
-                    academicYear = fields.academicYear,
-                    cccd = fields.idNumber,
-                    cccdIdIssueDate = fields.idIssueDate,
-                    cccdIdIssuePlace = fields.idIssuePlace,
-                    className = fields.className,
-                    dateOfBirth = fields.dob,
-                    department = fields.department,
-                    dormName = fields.dormName,
-                    duration = fields.duration,
-                    email = fields.email,
-                    emergencyContact = fields.emergencyContact,
-                    fullName = fields.fullName,
-                    gender = fields.gender,
-                    major = fields.department, // Giả sử major là department nếu không có field riêng
-                    permanentAddress = fields.permanentAddress,
-                    phoneNumber = fields.phoneNumber,
-                    schoolName = fields.schoolName,
-                    studentId = fields.studentId
-                )
-            )
-            Timber.d("Sending ResidenceRequest: $request to FormID: $formId")
-            registrationRepository.updateResidenceForm(formId, request).collect { resource ->
-                _updateResidenceResult.value = resource
-                when (resource) {
-                    is Resource.Success -> Timber.i("Update Residence success")
-                    is Resource.Error -> Timber.e("Update Residence error: ${resource.message}")
-                    else -> {}
-                }
-            }
-        }
-    }
-
-    fun resetUpdateResidenceResult() {
-        _updateResidenceResult.value = Resource.Idle
-    }
-
-    fun updateIdCardFront(uri: Uri?) {
-        _idCardFront.value = uri
-    }
-
-    fun updateIdCardBack(uri: Uri?) {
-        _idCardBack.value = uri
-    }
-
-    fun updateStudentCard(uri: Uri?) {
-        _studentCard.value = uri
-    }
-
-    fun updatePriorityDoc(uri: Uri?) {
-        _priorityDoc.value = uri
-    }
-
-    fun uploadDocuments() {
-        val front = _idCardFront.value
-        val back = _idCardBack.value
-        val student = _studentCard.value
-
-        if (front == null || back == null || student == null) return
-
-        viewModelScope.launch {
-            _uploadDocsResult.value = Resource.Loading
-            
-            // Giả lập logic chuyển đổi và upload
-            // Trong thực tế sẽ gọi registrationRepository.uploadDocuments(...)
-            kotlinx.coroutines.delay(2000)
-            _uploadDocsResult.value = Resource.Success(Unit)
-        }
-    }
-
-    fun resetUploadDocsResult() {
-        _uploadDocsResult.value = Resource.Idle
     }
 }

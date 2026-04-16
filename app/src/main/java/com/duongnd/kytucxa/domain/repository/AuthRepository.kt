@@ -3,6 +3,7 @@ package com.duongnd.kytucxa.domain.repository
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.data.remote.dto.ApiResponse
 import com.duongnd.kytucxa.data.remote.dto.auth.UpdateProfileRequest
+import com.duongnd.kytucxa.data.remote.dto.auth.fcm.FcmResponse
 import com.duongnd.kytucxa.data.remote.dto.auth.login.LoginRequest
 import com.duongnd.kytucxa.data.remote.dto.auth.login.LoginResponse
 import com.duongnd.kytucxa.data.remote.dto.auth.login.TokenDTO
@@ -63,4 +64,9 @@ interface AuthRepository {
      * Làm mới access token
      */
     suspend fun refreshToken(): Flow<Resource<TokenDTO>>
+
+    /**
+     * Cập nhật token FCM
+     */
+    suspend fun updateFcmToken(fcmToken: String): Flow<Resource<FcmResponse>>
 }

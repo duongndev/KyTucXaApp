@@ -12,8 +12,11 @@ import com.duongnd.kytucxa.core.navigations.Screen
 import com.duongnd.kytucxa.feature.registration.temporary.TemporaryFormScreen
 import com.duongnd.kytucxa.feature.registration.temporary.TemporaryViewModel
 import com.duongnd.kytucxa.feature.registration.uploadDocument.DocumentUploadScreen
+import com.duongnd.kytucxa.feature.registration.uploadDocument.UploadDocumentViewModel
 import com.duongnd.kytucxa.feature.registration.HtmlPreviewScreen
-import com.duongnd.kytucxa.feature.registration.RegistrationConfirmScreen
+import com.duongnd.kytucxa.feature.registration.confirm.RegistrationConfirmScreen
+import com.duongnd.kytucxa.feature.registration.confirm.RegistrationConfirmViewModel
+import androidx.compose.runtime.getValue
 import com.duongnd.kytucxa.feature.registration.RegistrationFlowScreen
 import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
 import com.duongnd.kytucxa.feature.registration.residence.ResidenceFormScreen
@@ -21,6 +24,7 @@ import com.duongnd.kytucxa.feature.registration.residence.ResidenceViewModel
 import com.duongnd.kytucxa.feature.registration.submissionMethod.DirectSubmissionScreen
 import com.duongnd.kytucxa.feature.registration.submissionMethod.SubmissionMethodScreen
 import com.duongnd.kytucxa.feature.signature.SignatureScreen
+import com.duongnd.kytucxa.feature.signature.SignatureViewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
@@ -87,9 +91,15 @@ fun NavGraphBuilder.registrationNavGraph(navController: NavHostController) {
             val parentEntry = remember(entry) {
                 navController.getBackStackEntry(Graphs.REGISTRATION)
             }
-            val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
+            val registrationViewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
+            val uploadViewModel = hiltViewModel<UploadDocumentViewModel>()
+            
+            val draft = registrationViewModel.draft.collectAsState().value
+            val formId = draft?.registrationForm?.id ?: ""
+
             DocumentUploadScreen(
-                viewModel = viewModel,
+                viewModel = uploadViewModel,
+                formId = formId,
                 onNext = { navController.navigate(Screen.RegistrationConfirm.route) },
                 onBack = { navController.popBackStack() }
             )
@@ -99,12 +109,16 @@ fun NavGraphBuilder.registrationNavGraph(navController: NavHostController) {
             val parentEntry = remember(entry) {
                 navController.getBackStackEntry(Graphs.REGISTRATION)
             }
-            val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
-            val draft = viewModel.draft.collectAsState().value
+            val confirmViewModel = hiltViewModel<RegistrationConfirmViewModel>()
+            val registrationViewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
+            val signatureViewModel = hiltViewModel<SignatureViewModel>(parentEntry)
+            
+            val draft = registrationViewModel.draft.collectAsState().value
             val formId = draft?.registrationForm?.id ?: ""
 
             RegistrationConfirmScreen(
-                viewModel = viewModel,
+                viewModel = confirmViewModel,
+                signatureViewModel = signatureViewModel,
                 onViewResidenceDetail = {
                     navController.navigate(Screen.HtmlPreview.createRoute(formId, "residence"))
                 },
@@ -144,10 +158,11 @@ fun NavGraphBuilder.registrationNavGraph(navController: NavHostController) {
             val parentEntry = remember(entry) {
                 navController.getBackStackEntry(Graphs.REGISTRATION)
             }
-            val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
+            val signatureViewModel = hiltViewModel<SignatureViewModel>(parentEntry)
+            // SignatureViewModel sẽ lưu trữ chữ ký để dùng cho các màn hình khác
             SignatureScreen(
-                onConfirm = { bitmap ->
-                    viewModel.updateSignature(bitmap)
+                viewModel = signatureViewModel,
+                onConfirm = {
                     navController.popBackStack()
                 },
                 onBack = { navController.popBackStack() }

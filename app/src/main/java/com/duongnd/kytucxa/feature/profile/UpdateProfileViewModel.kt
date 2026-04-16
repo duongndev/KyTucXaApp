@@ -14,6 +14,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 
 data class UpdateProfileState(
@@ -27,7 +31,7 @@ data class UpdateProfileState(
     val email: String = "", // Email chỉ đọc
     val phoneNumber: String = "",
     val identityCard: String = "",
-    val dateOfBirth: String = "",
+    val dateOfBirth: Date? = null,
     val gender: String = "",
     val university: String = "",
     val studentId: String = "",
@@ -96,7 +100,17 @@ class UpdateProfileViewModel @Inject constructor(
                 email = user?.email ?: currentState.email, // Email luôn lấy từ server
                 phoneNumber = if (forceOverwrite) (user?.phoneNumber ?: "") else (user?.phoneNumber ?: currentState.phoneNumber),
                 identityCard = if (forceOverwrite) (user?.identityCard ?: "") else (user?.identityCard ?: currentState.identityCard),
-                dateOfBirth = if (forceOverwrite) (user?.dateOfBirth ?: "") else (user?.dateOfBirth ?: currentState.dateOfBirth),
+                dateOfBirth = try {
+                    val dobStr = user?.dateOfBirth
+                    if (!dobStr.isNullOrEmpty()) {
+                        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).apply {
+                            timeZone = TimeZone.getTimeZone("UTC")
+                        }
+                        sdf.parse(dobStr)
+                    } else if (forceOverwrite) null else currentState.dateOfBirth
+                } catch (e: Exception) {
+                    if (forceOverwrite) null else currentState.dateOfBirth
+                },
                 gender = if (forceOverwrite) (user?.gender ?: "") else (user?.gender ?: currentState.gender),
                 
                 // Student Info - Đảm bảo lấy đúng từ object 'student'
@@ -112,7 +126,7 @@ class UpdateProfileViewModel @Inject constructor(
     fun onFullNameChange(value: String) = _state.update { it.copy(fullName = value) }
     fun onPhoneNumberChange(value: String) = _state.update { it.copy(phoneNumber = value) }
     fun onIdentityCardChange(value: String) = _state.update { it.copy(identityCard = value) }
-    fun onDateOfBirthChange(value: String) = _state.update { it.copy(dateOfBirth = value) }
+    fun onDateOfBirthChange(value: Date) = _state.update { it.copy(dateOfBirth = value) }
     fun onGenderChange(value: String) = _state.update { it.copy(gender = value) }
     fun onUniversityChange(value: String) = _state.update { it.copy(university = value) }
     fun onStudentIdChange(value: String) = _state.update { it.copy(studentId = value) }
@@ -121,6 +135,7 @@ class UpdateProfileViewModel @Inject constructor(
     fun onAcademicYearChange(value: String) = _state.update { it.copy(academicYear = value) }
 
     fun updateProfile() {
+        _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             val request = UpdateProfileRequest(
                 fullName = _state.value.fullName,
@@ -147,7 +162,10 @@ class UpdateProfileViewModel @Inject constructor(
                     Resource.Loading -> {
                         _state.update { it.copy(isLoading = true) }
                     }
-                    else -> {}
+
+                    else -> {
+                        
+                    }
                 }
             }
         }

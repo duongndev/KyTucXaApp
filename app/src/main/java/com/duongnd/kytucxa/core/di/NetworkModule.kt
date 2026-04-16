@@ -5,7 +5,9 @@ import com.duongnd.kytucxa.data.remote.api.AuthApi
 import com.duongnd.kytucxa.data.remote.api.PreviewApi
 import com.duongnd.kytucxa.data.remote.api.RegistrationApi
 import com.duongnd.kytucxa.data.remote.interceptor.AuthInterceptor
+import com.duongnd.kytucxa.core.utils.MoshiDateAdapter
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,7 +28,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideMoshi(): Moshi = Moshi.Builder().build()
+    fun provideMoshi(): Moshi = Moshi.Builder()
+        .add(MoshiDateAdapter())
+        .addLast(KotlinJsonAdapterFactory())
+        .build()
 
     @Provides
     @Singleton

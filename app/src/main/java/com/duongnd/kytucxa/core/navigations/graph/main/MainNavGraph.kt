@@ -81,10 +81,7 @@ fun MainScreen(rootNavController: NavHostController) {
 
     val detailScreens = listOf(
         Screen.RoomDetail.route,
-        Screen.Payment.route,
-        Screen.RegistrationForm.route,
-        Screen.DocumentUpload.route,
-        Screen.RegistrationFlow.route
+        Screen.Payment.route
     )
 
     val showNav = currentRoute in bottomBarScreens
@@ -113,9 +110,14 @@ fun MainScreen(rootNavController: NavHostController) {
                 modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding())
             ) {
                 composable(Screen.Home.route) {
-                    HomeScreen(onNavigateToPayment = {
-                        navController.navigate(Screen.Payment.route)
-                    })
+                    HomeScreen(
+                        onNavigateToPayment = {
+                            navController.navigate(Screen.Payment.route)
+                        },
+                        onNavigateToRegistration = {
+                            rootNavController.navigate(Graphs.REGISTRATION)
+                        }
+                    )
                 }
                 composable(Screen.Room.route) {
                     RoomScreen(onRoomClick = { id ->
@@ -148,32 +150,6 @@ fun MainScreen(rootNavController: NavHostController) {
                 }
                 composable(Screen.Support.route) {
                     SupportScreen()
-                }
-                composable(Screen.RegistrationForm.route) { entry ->
-                    // Sử dụng Graphs.MAIN từ rootNavController để share ViewModel giữa các bước trong Main
-                    val parentEntry = remember(entry) {
-                        rootNavController.getBackStackEntry(Graphs.MAIN)
-                    }
-                    val viewModel = hiltViewModel<ResidenceViewModel>(parentEntry)
-                    ResidenceFormScreen(
-                        viewModel = viewModel,
-                        onNext = { navController.navigate(Screen.DocumentUpload.route) },
-                        onBack = { navController.popBackStack() }
-                    )
-                }
-                composable(Screen.DocumentUpload.route) { entry ->
-                    val parentEntry = remember(entry) {
-                        rootNavController.getBackStackEntry(Graphs.MAIN)
-                    }
-                    val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
-                    DocumentUploadScreen(
-                        viewModel = viewModel,
-                        onNext = { navController.navigate(Screen.RegistrationFlow.route) },
-                        onBack = { navController.popBackStack() }
-                    )
-                }
-                composable(Screen.RegistrationFlow.route) {
-                    RegistrationFlowScreen(onBack = { navController.popBackStack() })
                 }
             }
         }

@@ -89,12 +89,19 @@ class UploadDocumentViewModel @Inject constructor(
 
     private fun uriToMultipart(uri: Uri, partName: String): MultipartBody.Part? {
         val file = uriToFile(context, uri) ?: return null
-        val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+        val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+        val requestFile = file.asRequestBody(mimeType.toMediaTypeOrNull())
         return MultipartBody.Part.createFormData(partName, file.name, requestFile)
     }
 
     private fun uriToFile(context: Context, uri: Uri): File? {
-        val file = File(context.cacheDir, "temp_${System.currentTimeMillis()}.jpg")
+        val extension = when (context.contentResolver.getType(uri)) {
+            "image/png" -> "png"
+            "image/gif" -> "gif"
+            "image/webp" -> "webp"
+            else -> "jpg"
+        }
+        val file = File(context.cacheDir, "temp_${System.currentTimeMillis()}.$extension")
         return try {
             context.contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(file).use { output ->

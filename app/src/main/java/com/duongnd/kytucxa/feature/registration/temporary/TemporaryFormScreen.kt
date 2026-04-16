@@ -44,8 +44,8 @@ fun TemporaryFormScreen(
     // Xử lý điều hướng khi cập nhật thành công
     LaunchedEffect(updateResult) {
         if (updateResult is Resource.Success) {
-            onNext()
             viewModel.resetUpdateResult()
+            onNext()
         }
     }
 
@@ -53,6 +53,7 @@ fun TemporaryFormScreen(
 
     // Handle System Back Press
     BackHandler {
+        viewModel.resetUpdateResult()
         onBack()
     }
 
@@ -61,7 +62,10 @@ fun TemporaryFormScreen(
             TopAppBar(
                 title = { Text("Tờ khai cư trú", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        viewModel.resetUpdateResult()
+                        onBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
                     }
                 }

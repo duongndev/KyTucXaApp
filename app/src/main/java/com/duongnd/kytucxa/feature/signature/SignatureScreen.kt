@@ -17,13 +17,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.duongnd.kytucxa.core.ui.components.KTXButton
 import com.duongnd.kytucxa.core.ui.components.SignaturePad
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignatureScreen(
-    onConfirm: (Bitmap) -> Unit,
+    viewModel: SignatureViewModel = hiltViewModel(),
+    onConfirm: () -> Unit,
     onBack: () -> Unit
 ) {
     var tempSignatureBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -122,7 +124,12 @@ fun SignatureScreen(
                     // Sử dụng KTXButton và điều khiển trạng thái bằng tham số 'enabled'
                     KTXButton(
                         text = "Xác nhận ký",
-                        onClick = { tempSignatureBitmap?.let { onConfirm(it) } },
+                        onClick = { 
+                            tempSignatureBitmap?.let { 
+                                viewModel.updateSignature(it)
+                                onConfirm() 
+                            } 
+                        },
                         modifier = Modifier.width(160.dp),
                         containerColor = primaryColor,
                         enabled = tempSignatureBitmap != null

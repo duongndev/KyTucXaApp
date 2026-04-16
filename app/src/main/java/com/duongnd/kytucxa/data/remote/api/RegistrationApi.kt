@@ -7,6 +7,8 @@ import com.duongnd.kytucxa.data.remote.dto.registration.document.UploadDocumentR
 import com.duongnd.kytucxa.data.remote.dto.registration.draft.DraftResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.submit.RegistrationSubmitRequest
+import com.duongnd.kytucxa.data.remote.dto.registration.submit.RegistrationSubmitResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryResponse
 import okhttp3.MultipartBody
@@ -57,4 +59,12 @@ interface RegistrationApi {
         @Part("type") type: RequestBody,
         @Part("note") note: RequestBody? = null
     ): Response<ApiResponse<UploadDocumentResponse>>
+
+
+    @POST("/api/registrations/{id}/submit")
+    suspend fun submitRegistrationFormApi(
+        @Path("id") id: String,
+        @Body signature: RegistrationSubmitRequest
+    ): Response<ApiResponse<RegistrationSubmitResponse>>
+
 }

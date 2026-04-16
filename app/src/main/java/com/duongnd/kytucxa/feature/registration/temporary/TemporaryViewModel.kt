@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.core.utils.SessionManager
+import com.duongnd.kytucxa.data.remote.dto.registration.FormData
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryDTO
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryResponse
@@ -18,7 +19,6 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
-
 @HiltViewModel
 class TemporaryViewModel @Inject constructor(
     private val registrationRepository: RegistrationRepository,
@@ -31,15 +31,14 @@ class TemporaryViewModel @Inject constructor(
     val updateResult: StateFlow<Resource<TemporaryResponse>> = _updateResult.asStateFlow()
 
     private var existingFormId: String? = null
-
+    private var originalTemporary: TemporaryModel? = null
+    private var lastFullResponse: TemporaryResponse? = null
 
     init {
         loadInitialData()
     }
 
-
     private fun loadInitialData() {
-        // Ưu tiên 1: Load từ thông tin cá nhân trong Session
         val currentUser = sessionManager.getUser()
         currentUser?.let { profile ->
             _uiState.update { state ->
@@ -56,34 +55,29 @@ class TemporaryViewModel @Inject constructor(
             }
         }
 
-        // Ưu tiên 2: Ghi đè bằng bản nháp (Draft) trên server nếu có
         viewModelScope.launch {
             registrationRepository.getCurrentDraft().collect { resource ->
                 if (resource is Resource.Success) {
                     val draft = resource.data
-                    // Lấy ID từ existingFormId hoặc từ chính registrationForm
                     existingFormId = draft.existingFormId ?: draft.registrationForm?.id
-                    Timber.d("Loaded Draft. existingFormId: $existingFormId")
 
                     draft.registrationForm?.formData?.temporary?.let { resDto ->
+                        val loadedTemporary = TemporaryModel(
+                            fullName = resDto.fullName ?: "",
+                            gender = resDto.gender ?: "",
+                            dateOfBirth = resDto.dateOfBirth ?: "",
+                            cccd = resDto.cccd ?: "",
+                            phoneNumber = resDto.phoneNumber ?: "",
+                            email = resDto.email ?: "",
+                            receiver = resDto.receiver ?: "",
+                            ownerCccd = resDto.ownerCccd ?: "",
+                            ownerName = resDto.ownerName ?: "",
+                            ownerRelation = resDto.ownerRelation ?: "",
+                            requestContent = resDto.requestContent ?: ""
+                        )
+                        originalTemporary = loadedTemporary
                         _uiState.update { state ->
-                            state.copy(
-                                temporary = state.temporary.copy(
-                                    fullName = resDto.fullName ?: state.temporary.fullName,
-                                    gender = resDto.gender ?: state.temporary.gender,
-                                    dateOfBirth = resDto.dateOfBirth ?: state.temporary.dateOfBirth,
-                                    cccd = resDto.cccd ?: state.temporary.cccd,
-                                    phoneNumber = resDto.phoneNumber ?: state.temporary.phoneNumber,
-                                    email = resDto.email ?: state.temporary.email,
-                                    receiver = resDto.receiver ?: state.temporary.receiver,
-                                    ownerCccd = resDto.ownerCccd ?: state.temporary.ownerCccd,
-                                    ownerName = resDto.ownerName ?: state.temporary.ownerName,
-                                    ownerRelation = resDto.ownerRelation
-                                        ?: state.temporary.ownerRelation,
-                                    requestContent = resDto.requestContent
-                                        ?: state.temporary.requestContent
-                                )
-                            )
+                            state.copy(temporary = loadedTemporary)
                         }
                     }
                 }
@@ -91,36 +85,32 @@ class TemporaryViewModel @Inject constructor(
         }
     }
 
-
-    /**
-     * Cập nhật thông tin TemporaryModel
-     */
     fun updateTemporary(update: TemporaryModel.() -> TemporaryModel) {
         _uiState.update { it.copy(temporary = it.temporary.update()) }
     }
 
-    fun updateSignature(bitmap: android.graphics.Bitmap?) {
-        _uiState.update { it.copy(signatureBitmap = bitmap) }
-    }
-
-
     fun submitForm() {
         val currentState = _uiState.value
-        Timber.d("Submit button clicked. Current Residence: ${currentState.temporary}")
-        Timber.d("Is form valid: ${currentState.isFormValid}")
-
-        if (!currentState.isFormValid) {
-            Timber.w("Form is invalid. Cannot submit.")
-            return
-        }
+        if (!currentState.isFormValid) return
 
         viewModelScope.launch {
+            val model = currentState.temporary
+            
+            if (originalTemporary != null && model == originalTemporary) {
+                Timber.d("Temporary data unchanged. Skipping API call.")
+                _updateResult.value = Resource.Success(
+                    TemporaryResponse(
+                        nextStep = 3, 
+                        registrationForm = lastFullResponse?.registrationForm ?: dummyForm()
+                    )
+                )
+                return@launch
+            }
+
             _updateResult.value = Resource.Loading
             val formId = existingFormId
 
-            // Tiến hành cập nhật dữ liệu form
             if (formId != null) {
-                val model = currentState.temporary
                 val request = TemporaryRequest(
                     temporaryData = TemporaryDTO(
                         cccd = model.cccd,
@@ -137,22 +127,25 @@ class TemporaryViewModel @Inject constructor(
                     )
                 )
 
-
-                Timber.d("Updating Temporary Form for ID: $formId")
                 registrationRepository.updateTemporaryForm(formId, request).collect { resource ->
                     _updateResult.value = resource
                     if (resource is Resource.Success) {
-                        Timber.i("Update Temporary Form successful")
-                    } else if (resource is Resource.Error) {
-                        Timber.e("Update Temporary Form failed: ${resource.message}")
+                        lastFullResponse = resource.data
+                        originalTemporary = model
                     }
                 }
             } else {
                 _updateResult.value = Resource.Error("Không thể xác định Form ID")
             }
         }
-
     }
+
+    private fun dummyForm() = com.duongnd.kytucxa.data.remote.dto.registration.residence.RegistrationForm(
+        id = existingFormId ?: "",
+        currentStep = 2,
+        completedSteps = listOf(1, 2),
+        formData = FormData()
+    )
 
     fun resetUpdateResult() {
         _updateResult.value = Resource.Idle

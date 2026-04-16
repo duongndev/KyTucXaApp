@@ -26,21 +26,13 @@ fun NavGraphBuilder.splashNavGraph(navController: NavHostController) {
                     }
                 },
                 onNavigateToUpdateProfile = {
-                    // Điều hướng thẳng tới màn hình cập nhật hồ sơ
                     navController.navigate(Screen.UpdateProfile.route) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
                 },
                 onNavigateToRegistration = { draft ->
-                    if (draft != null) {
-                        // Lưu draft vào ViewModel của Registration hoặc truyền qua Route
-                        navController.navigate(Graphs.REGISTRATION) {
-                            popUpTo(Graphs.SPLASH) { inclusive = true }
-                        }
-                    } else {
-                        navController.navigate(Graphs.REGISTRATION) {
-                            popUpTo(Graphs.SPLASH) { inclusive = true }
-                        }
+                    navController.navigate(Graphs.REGISTRATION) {
+                        popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
                 },
                 onNavigateToPending = { registrationId ->
@@ -49,35 +41,52 @@ fun NavGraphBuilder.splashNavGraph(navController: NavHostController) {
                     }
                 },
                 onNavigateToRequiresSupplement = { registrationId ->
-                    // Giả định quay lại bước upload tài liệu
-                    navController.navigate(Screen.DocumentUpload.route) {
+                    navController.navigate(Graphs.REGISTRATION) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
+                    // Xây dựng BackStack: Bước 1 -> Bước 2 -> Bước 3
+                    navController.navigate(Screen.RegistrationForm.route)
+                    navController.navigate(Screen.TemporaryForm.route)
+                    navController.navigate(Screen.DocumentUpload.route)
                 },
                 onNavigateToOfflineInstructions = {
-                    navController.navigate(Screen.DirectSubmissionGuide.route) {
+                    navController.navigate(Graphs.REGISTRATION) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
+                    navController.navigate(Screen.DirectSubmissionGuide.route)
                 },
                 onNavigateToStep1Residence = {
-                    navController.navigate(Screen.RegistrationForm.route) {
+                    navController.navigate(Graphs.REGISTRATION) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
+                    navController.navigate(Screen.RegistrationForm.route)
                 },
                 onNavigateToStep2Temporary = {
-                    navController.navigate(Screen.TemporaryForm.route) {
+                    navController.navigate(Graphs.REGISTRATION) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
+                    // Đi qua Bước 1 để Back quay lại được
+                    navController.navigate(Screen.RegistrationForm.route)
+                    navController.navigate(Screen.TemporaryForm.route)
                 },
                 onNavigateToStep3Documents = {
-                    navController.navigate(Screen.DocumentUpload.route) {
+                    navController.navigate(Graphs.REGISTRATION) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
+                    // Đi qua Bước 1 -> Bước 2 để Back quay lại được
+                    navController.navigate(Screen.RegistrationForm.route)
+                    navController.navigate(Screen.TemporaryForm.route)
+                    navController.navigate(Screen.DocumentUpload.route)
                 },
                 onNavigateToSubmitReady = {
-                    navController.navigate(Screen.RegistrationFlow.route) {
+                    navController.navigate(Graphs.REGISTRATION) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
+                    // Đi qua các bước trước đó
+                    navController.navigate(Screen.RegistrationForm.route)
+                    navController.navigate(Screen.TemporaryForm.route)
+                    navController.navigate(Screen.DocumentUpload.route)
+                    navController.navigate(Screen.RegistrationConfirm.route)
                 }
             )
         }

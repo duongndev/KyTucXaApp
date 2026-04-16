@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.core.content.edit
 
 @Singleton
 class SessionManager @Inject constructor(
@@ -38,19 +39,28 @@ class SessionManager @Inject constructor(
         private const val ACCESS_TOKEN = "access_token"
         private const val REFRESH_TOKEN = "refresh_token"
         private const val USER_DATA = "user_data"
+        private const val FCM_TOKEN = "fcm_token"
+    }
+
+    fun saveFcmToken(token: String) {
+        this.sharedPreferences.edit { putString(FCM_TOKEN, token) }
+    }
+
+    fun getFcmToken(): String? {
+        return this.sharedPreferences.getString(FCM_TOKEN, null)
     }
 
     fun saveAccessToken(token: String) {
-        sharedPreferences.edit().putString(ACCESS_TOKEN, token).apply()
+        this.sharedPreferences.edit { putString(ACCESS_TOKEN, token) }
         _isLoggedIn.value = true
     }
 
     fun getAccessToken(): String? {
-        return sharedPreferences.getString(ACCESS_TOKEN, null)
+        return this.sharedPreferences.getString(ACCESS_TOKEN, null)
     }
 
     fun saveRefreshToken(token: String) {
-        sharedPreferences.edit().putString(REFRESH_TOKEN, token).apply()
+        sharedPreferences.edit { putString(REFRESH_TOKEN, token) }
     }
 
     fun getRefreshToken(): String? {
@@ -76,7 +86,7 @@ class SessionManager @Inject constructor(
     }
 
     fun clearSession() {
-        sharedPreferences.edit().clear().apply()
+        sharedPreferences.edit { clear() }
         _isLoggedIn.value = false
     }
 

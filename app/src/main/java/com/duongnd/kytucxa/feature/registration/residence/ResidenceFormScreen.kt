@@ -37,17 +37,20 @@ fun ResidenceFormScreen(
 
     // Handle System Back Press
     BackHandler {
+        viewModel.resetUpdateResult()
         showExitDialog = true
     }
 
     // Exit Confirmation Dialog
     if (showExitDialog) {
         KTXDialog(
-            onDismissRequest = { showExitDialog = false },
+            onDismissRequest = { 
+                showExitDialog = false 
+            },
             title = "Thoát đăng ký?",
             description = {
                 Text(
-                    "Dữ liệu bạn vừa nhập chưa được lưu chính thức. Bạn có chắc chắn muốn quay lại màn hình trước đó?",
+                    "Dữ liệu bạn vừa nhập chưa được lưu chính thức. Bạn có chắc chắn muốn quay lại?",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )
@@ -55,6 +58,7 @@ fun ResidenceFormScreen(
             confirmButtonText = "THOÁT",
             onConfirm = {
                 showExitDialog = false
+                viewModel.resetUpdateResult()
                 onBack()
             },
             dismissButtonText = "Ở LẠI",
@@ -65,6 +69,7 @@ fun ResidenceFormScreen(
     // Xử lý chuyển trang khi submit thành công
     LaunchedEffect(updateResult) {
         if (updateResult is Resource.Success) {
+            viewModel.resetUpdateResult()
             onNext()
         }
     }

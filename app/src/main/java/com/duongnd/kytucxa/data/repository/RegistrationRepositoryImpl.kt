@@ -9,6 +9,8 @@ import com.duongnd.kytucxa.data.remote.dto.registration.document.UploadDocumentR
 import com.duongnd.kytucxa.data.remote.dto.registration.draft.DraftResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.submit.RegistrationSubmitRequest
+import com.duongnd.kytucxa.data.remote.dto.registration.submit.RegistrationSubmitResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryResponse
 import com.duongnd.kytucxa.domain.repository.RegistrationRepository
@@ -75,6 +77,15 @@ class RegistrationRepositoryImpl @Inject constructor(
                 type = typeBody,
                 note = noteBody
             )
+        }
+    }
+
+    override suspend fun submitRegistrationForm(
+        id: String,
+        signature: String
+    ): Flow<Resource<RegistrationSubmitResponse>> {
+        return handleResponseResource {
+            registrationApi.submitRegistrationFormApi(id, RegistrationSubmitRequest(signature))
         }
     }
 }

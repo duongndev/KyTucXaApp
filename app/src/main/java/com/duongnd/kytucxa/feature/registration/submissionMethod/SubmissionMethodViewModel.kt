@@ -1,10 +1,10 @@
 package com.duongnd.kytucxa.feature.registration.submissionMethod
 
-import androidx.compose.ui.text.toLowerCase
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationRequest
+import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationResponse
 import com.duongnd.kytucxa.domain.models.SubmissionMethod
 import com.duongnd.kytucxa.domain.repository.RegistrationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,9 +41,6 @@ class SubmissionMethodViewModel @Inject constructor(
                 RegistrationRequest(submissionType = submissionType)
             ).collect { result ->
                 when (result) {
-                    is Resource.Idle -> {
-                        _state.update { it.copy(isLoading = false) }
-                    }
                     is Resource.Loading -> {
                         _state.update { it.copy(isLoading = true, error = null) }
                     }
@@ -51,19 +48,32 @@ class SubmissionMethodViewModel @Inject constructor(
                         _state.update { it.copy(isLoading = false, isSuccess = true) }
                     }
                     is Resource.Error -> {
-                        val existingData = result.data as? com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationResponse
+                        val existingData = result.data as? RegistrationResponse
                         _state.update { 
                             it.copy(
                                 isLoading = false, 
                                 error = result.message,
-                                existingFormId = existingData?.existingFormId,
-                                existingFormCode = existingData?.existingFormCode,
-                                existingStatus = existingData?.existingStatus
+                                existingFormId = existingData?.id ?: existingData?.existingFormId,
+                                existingFormCode = existingData?.registrationFormCode ?: existingData?.existingFormCode,
+                                existingStatus = existingData?.status ?: existingData?.existingStatus
                             ) 
                         }
                     }
+                    else -> {
+                         _state.update { it.copy(isLoading = false) }
+                    }
                 }
             }
+        }
+    }
+
+    fun resetState() {
+        _state.update { 
+            it.copy(
+                isSuccess = false,
+                error = null,
+                isLoading = false
+            )
         }
     }
 }

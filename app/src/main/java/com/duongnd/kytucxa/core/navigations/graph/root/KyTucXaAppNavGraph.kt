@@ -108,7 +108,7 @@ fun KyTucXaAppNavGraph(
             UpdateProfileScreen(
                 onBack = { navController.popBackStack() },
                 onNavigateToSubmissionMethod = {
-                    navController.navigate(Screen.SubmissionMethod.route)
+                    navController.navigate(Graphs.REGISTRATION)
                 }
             )
         }

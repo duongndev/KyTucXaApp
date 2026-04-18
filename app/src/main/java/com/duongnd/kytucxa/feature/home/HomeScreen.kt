@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -83,21 +85,25 @@ fun HomeScreen(
     val backgroundColor = Color.White
     val lazyListState = rememberLazyListState()
 
-    // Chỉ hiện Sticky Header khi Header chính đã cuộn qua một phần
+    // Tạm thời comment logic STICKY HEADER
+    /*
     val isScrolled by remember {
-        derivedStateOf { lazyListState.firstVisibleItemIndex > 0 }
+        derivedStateOf {
+            lazyListState.firstVisibleItemIndex > 0 ||
+                    lazyListState.firstVisibleItemScrollOffset > 0
+        }
     }
+    */
 
-    // Cập nhật màu Status Bar và Navigation Bar động
+    // Cập nhật màu Status Bar và Navigation Bar cố định
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             WindowCompat.setDecorFitsSystemWindows(window, false)
 
-            // Khi hiện Sticky Header, Status Bar tiệp màu PrimaryBlue đặc. Khi ở Top, trong suốt để thấy Gradient.
-            window.statusBarColor =
-                if (isScrolled) primaryColor.toArgb() else Color.Transparent.toArgb()
+            // Để trong suốt để thấy nền Gradient của Header
+            window.statusBarColor = Color.Transparent.toArgb()
 
             val controller = WindowCompat.getInsetsController(window, view)
             controller.isAppearanceLightStatusBars = false // Luôn dùng icon trắng trên nền xanh
@@ -112,7 +118,7 @@ fun HomeScreen(
             .fillMaxSize()
             .background(backgroundColor)
     ) {
-        // Nền Gradient cố định phía sau
+        // 1. Nền Gradient cố định phía sau
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -128,81 +134,87 @@ fun HomeScreen(
                 )
         )
 
-        LazyColumn(
-            state = lazyListState,
+        // 2. Phần nội dung cuộn (Dịch vụ, Tin tức, Hoạt động)
+        Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // 1. Header chính
-            item {
-                ModernHomeHeader()
-            }
+            // Khoảng trống ban đầu cố định để không bị Header che mất nội dung
+            Spacer(modifier = Modifier.height(230.dp))
 
-            // 2. STICKY HEADER
-            stickyHeader {
-                if (isScrolled) {
-                    StickyHomeHeader(primaryColor)
-                }
-            }
-
-            // 3. Phần nội dung (Dịch vụ, Tin tức, Hoạt động)
-            item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = backgroundColor,
-                    shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                color = backgroundColor,
+                shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
+            ) {
+                LazyColumn(
+                    state = lazyListState,
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Column {
+                    item {
                         ServiceSection(
                             isTablet = false,
                             onVirtualCardClick = { showVirtualCard = true },
                             onPaymentClick = onNavigateToPayment,
                             onRegistrationClick = onNavigateToRegistration
                         )
+                    }
 
+                    item {
                         PromotionSection(isTablet = false)
+                    }
 
-//                        SectionHeader(title = "Hoạt động gần đây", onSeeAll = {})
+                    item {
+                        SectionHeader(title = "Hoạt động gần đây", onSeeAll = {})
+                    }
+
+                    // Hiển thị danh sách hoạt động trong LazyColumn để cuộn mượt mà
+                    items(dummyActivities) { activity ->
+                        ModernActivityItem(activity, isTablet = false)
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(110.dp))
                     }
                 }
             }
-
-//            items(dummyActivities) { activity ->
-//                Box(modifier = Modifier.background(backgroundColor)) {
-//                    ModernActivityItem(activity, isTablet = false)
-//                }
-//            }
-
-            item {
-                Spacer(
-                    modifier = Modifier
-                        .height(110.dp)
-                        .fillMaxWidth()
-                        .background(backgroundColor)
-                )
-            }
         }
 
-        // Bottom Sheet Thẻ KTX
-        if (showVirtualCard) {
-            ModalBottomSheet(
-                onDismissRequest = { showVirtualCard = false },
-                sheetState = sheetState,
-                containerColor = MaterialTheme.colorScheme.surface,
-                dragHandle = { BottomSheetDefaults.DragHandle() }
-            ) {
-                Box(modifier = Modifier.padding(bottom = 32.dp)) {
-                    DormCard(
-                        "Trần Thị Hương Giang",
-                        "SV736734",
-                        "Đại học Quốc Gia Hà Nội",
-                        "A-1234",
-                        "31/12/2026"
-                    )
-                }
+        // 3. Header "Fit cứng" (Fixed Overlay)
+        Box(modifier = Modifier.fillMaxWidth()) {
+            // Luôn hiển thị Header chính, tạm thời bỏ qua Sticky Header
+            ModernHomeHeader()
+            
+            /*
+            if (isScrolled) {
+                StickyHomeHeader(primaryColor)
+            }
+            */
+        }
+    }
+
+    // Bottom Sheet Thẻ KTX
+    if (showVirtualCard) {
+        ModalBottomSheet(
+            onDismissRequest = { showVirtualCard = false },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            Box(modifier = Modifier.padding(bottom = 32.dp)) {
+                DormCard(
+                    "Trần Thị Hương Giang",
+                    "SV736734",
+                    "Đại học Quốc Gia Hà Nội",
+                    "A-1234",
+                    "31/12/2026"
+                )
             }
         }
     }
 }
+
 
 @Composable
 fun StickyHomeHeader(primaryColor: Color) {

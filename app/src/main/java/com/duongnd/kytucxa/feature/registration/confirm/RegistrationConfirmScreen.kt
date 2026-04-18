@@ -1,6 +1,7 @@
 package com.duongnd.kytucxa.feature.registration.confirm
 
 import android.graphics.Bitmap
+import timber.log.Timber
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -83,6 +84,14 @@ fun RegistrationConfirmScreen(
     val signatureState by signatureViewModel.state.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     var isConfirmed by remember { mutableStateOf(false) }
+
+    LaunchedEffect(signatureState.base64) {
+        signatureState.base64?.let {
+            Timber.d("--- CHỮ KÝ BASE64 BẮT ĐẦU ---")
+            Timber.d("data:image/png;base64,$it")
+            Timber.d("--- CHỮ KÝ BASE64 KẾT THÚC ---")
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadRegistrationData()
@@ -240,7 +249,9 @@ fun RegistrationConfirmScreen(
                     KTXButton(
                         text = "GỬI ĐƠN ĐĂNG KÝ",
                         onClick = { 
-                            viewModel.submitRegistration(signatureState.base64 ?: "") 
+                            Timber.d("--- SUBMIT CLICKED ---")
+                            Timber.d("data:image/png;base64,${signatureState.base64}")
+                             viewModel.submitRegistration(signatureState.base64 ?: "")
                         },
                         isLoading = uiState.isSubmitting,
                         enabled = isConfirmed && signatureState.bitmap != null && !uiState.isSubmitting,

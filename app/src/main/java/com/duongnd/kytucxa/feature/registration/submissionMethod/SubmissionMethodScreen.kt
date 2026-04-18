@@ -33,7 +33,9 @@ import timber.log.Timber
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.duongnd.kytucxa.core.ui.components.KTXButton
+import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.domain.models.SubmissionMethod
+import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,11 +44,23 @@ fun SubmissionMethodScreen(
     onDirectSelected: () -> Unit,
     onContinueExistingForm: (String) -> Unit,
     onExit: () -> Unit,
-    viewModel: SubmissionMethodViewModel = hiltViewModel()
+    viewModel: SubmissionMethodViewModel = hiltViewModel(),
+    registrationViewModel: RegistrationViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
+    val registrationState by registrationViewModel.currentRegistration.collectAsState()
     val primaryColor = Color(0xFF0047BB)
+
+    // Tự động điều hướng dựa trên kết quả API
+    LaunchedEffect(registrationState) {
+        if (registrationState is Resource.Success) {
+            val data = (registrationState as Resource.Success).data
+            if (data.draft != null) {
+                // Nếu có đơn nháp, hiện Dialog (đã có logic dưới)
+            }
+        }
+    }
 
     // Dialog thông báo đơn cũ
     if (state.existingFormId != null) {

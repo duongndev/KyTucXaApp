@@ -1,6 +1,7 @@
 package com.duongnd.kytucxa.feature.signature
 
 import android.graphics.Bitmap
+import timber.log.Timber
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -127,6 +128,8 @@ fun SignatureScreen(
                         onClick = { 
                             tempSignatureBitmap?.let { 
                                 viewModel.updateSignature(it)
+                                // Log ngay khi xác nhận ký
+                                Timber.d("Signature Captured - Base64: ${viewModel.state.value.base64}")
                                 onConfirm() 
                             } 
                         },

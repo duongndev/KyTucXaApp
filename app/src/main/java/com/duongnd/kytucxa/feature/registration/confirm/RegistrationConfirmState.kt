@@ -1,6 +1,6 @@
 package com.duongnd.kytucxa.feature.registration.confirm
 
-import com.duongnd.kytucxa.data.remote.dto.registration.draft.RegistrationForm
+import com.duongnd.kytucxa.data.remote.dto.registration.current.draft.RegistrationForm
 
 data class RegistrationConfirmState(
     val isLoading: Boolean = false,

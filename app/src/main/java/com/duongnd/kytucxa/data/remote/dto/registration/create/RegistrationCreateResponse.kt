@@ -1,20 +1,20 @@
 package com.duongnd.kytucxa.data.remote.dto.registration.create
 
-import com.duongnd.kytucxa.data.remote.dto.registration.FormData
-import com.duongnd.kytucxa.data.remote.dto.registration.RequiredDocuments
+import com.duongnd.kytucxa.data.remote.dto.registration.FormDataDTO
+import com.duongnd.kytucxa.data.remote.dto.registration.RequiredDocumentsDTO
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
-data class RegistrationResponse(
+data class RegistrationCreateResponse(
     @Json(name = "_id")
     val id: String? = null,
     val completedSteps: List<Any>? = null,
     val createdAt: String? = null,
     val currentStep: Int? = null,
-    val formData: FormData? = null,
+    val formData: FormDataDTO? = null,
     val registrationFormCode: String? = null,
-    val requiredDocuments: RequiredDocuments? = null,
+    val requiredDocuments: RequiredDocumentsDTO? = null,
     val status: String? = null,
     val submissionType: String? = null,
     val updatedAt: String? = null,

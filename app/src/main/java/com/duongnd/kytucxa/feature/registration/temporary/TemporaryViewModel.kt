@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.core.utils.SessionManager
-import com.duongnd.kytucxa.data.remote.dto.registration.FormData
+import com.duongnd.kytucxa.data.remote.dto.registration.FormDataDTO
+import com.duongnd.kytucxa.data.remote.dto.registration.current.CurrentResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryDTO
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryResponse
@@ -56,30 +57,42 @@ class TemporaryViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            registrationRepository.getCurrentDraft().collect { resource ->
-                if (resource is Resource.Success) {
-                    val draft = resource.data
-                    existingFormId = draft.existingFormId ?: draft.registrationForm?.id
-
-                    draft.registrationForm?.formData?.temporary?.let { resDto ->
-                        val loadedTemporary = TemporaryModel(
-                            fullName = resDto.fullName ?: "",
-                            gender = resDto.gender ?: "",
-                            dateOfBirth = resDto.dateOfBirth ?: "",
-                            cccd = resDto.cccd ?: "",
-                            phoneNumber = resDto.phoneNumber ?: "",
-                            email = resDto.email ?: "",
-                            receiver = resDto.receiver ?: "",
-                            ownerCccd = resDto.ownerCccd ?: "",
-                            ownerName = resDto.ownerName ?: "",
-                            ownerRelation = resDto.ownerRelation ?: "",
-                            requestContent = resDto.requestContent ?: ""
-                        )
-                        originalTemporary = loadedTemporary
-                        _uiState.update { state ->
-                            state.copy(temporary = loadedTemporary)
-                        }
+            val cached = registrationRepository.getCachedRegistration()
+            if (cached != null && cached.draft != null) {
+                Timber.d("TemporaryViewModel: Using cached registration")
+                handleLoadedRegistration(cached)
+            } else {
+                registrationRepository.getCurrentRegistration().collect { resource ->
+                    if (resource is Resource.Success) {
+                        resource.data?.let { handleLoadedRegistration(it) }
                     }
+                }
+            }
+        }
+    }
+
+    private fun handleLoadedRegistration(currentRes: CurrentResponse) {
+        val draft = currentRes.draft
+        if (draft != null) {
+            existingFormId = draft.id
+
+            draft.formData?.temporary?.let { resDto ->
+                val loadedTemporary = TemporaryModel(
+                    fullName = resDto.fullName,
+                    gender = resDto.gender,
+                    dateOfBirth = resDto.dateOfBirth,
+                    cccd = resDto.cccd,
+                    phoneNumber = resDto.phoneNumber,
+                    email = resDto.email,
+                    receiver = resDto.receiver,
+                    ownerCccd = resDto.ownerCccd ?: "",
+                    ownerName = resDto.ownerName ?: "",
+                    ownerRelation = resDto.ownerRelation ?: "",
+                    requestContent = resDto.requestContent
+                )
+                originalTemporary = loadedTemporary
+                _uiState.update { state ->
+                    state.copy(temporary = loadedTemporary)
                 }
             }
         }
@@ -144,7 +157,7 @@ class TemporaryViewModel @Inject constructor(
         id = existingFormId ?: "",
         currentStep = 2,
         completedSteps = listOf(1, 2),
-        formData = FormData()
+        formData = FormDataDTO()
     )
 
     fun resetUpdateResult() {

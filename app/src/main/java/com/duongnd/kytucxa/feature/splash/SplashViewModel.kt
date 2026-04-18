@@ -6,8 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.core.utils.SessionManager
 import com.duongnd.kytucxa.data.remote.dto.auth.me.CurrentUser
-import com.duongnd.kytucxa.data.remote.dto.registration.draft.DraftResponse
-import com.duongnd.kytucxa.data.remote.dto.registration.RegistrationStatus
+import com.duongnd.kytucxa.data.remote.dto.registration.current.CurrentType
+import com.duongnd.kytucxa.data.remote.dto.registration.current.draft.DraftRegistrationDTO
 import com.duongnd.kytucxa.domain.repository.AuthRepository
 import com.duongnd.kytucxa.domain.repository.RegistrationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -52,7 +51,7 @@ class SplashViewModel @Inject constructor(
     private suspend fun startAuthCheck() {
         _destination.value = SplashDestination.Loading
         val token = sessionManager.getAccessToken()
-        
+
         if (token.isNullOrEmpty()) {
             _destination.value = SplashDestination.Login
             return
@@ -64,10 +63,13 @@ class SplashViewModel @Inject constructor(
             is Resource.Success -> {
                 handleUserLogic(userResource.data)
             }
+
             is Resource.Error -> {
-                val refreshResource = authRepository.refreshToken().first { it !is Resource.Loading }
+                val refreshResource =
+                    authRepository.refreshToken().first { it !is Resource.Loading }
                 if (refreshResource is Resource.Success) {
-                    val retryResource = authRepository.getCurrentUser().first { it !is Resource.Loading }
+                    val retryResource =
+                        authRepository.getCurrentUser().first { it !is Resource.Loading }
                     if (retryResource is Resource.Success) {
                         handleUserLogic(retryResource.data)
                     } else {
@@ -77,6 +79,7 @@ class SplashViewModel @Inject constructor(
                     _destination.value = SplashDestination.Login
                 }
             }
+
             else -> _destination.value = SplashDestination.Login
         }
     }
@@ -106,104 +109,60 @@ class SplashViewModel @Inject constructor(
         if (!isPersonalInfoComplete || !isStudentInfoComplete) {
             _destination.value = SplashDestination.UpdateProfile
         } else {
-            checkRegistrationDraft()
+            checkCurrentRegistration()
         }
     }
 
-    private suspend fun checkRegistrationDraft() {
-        val draftResource = registrationRepository.getCurrentDraft().first { it !is Resource.Loading }
-        
-        Timber.d("Splash: checkRegistrationDraft result: $draftResource")
+    private suspend fun checkCurrentRegistration() {
+        val resource =
+            registrationRepository.getCurrentRegistration().first { it !is Resource.Loading }
 
-        when (draftResource) {
+        Timber.d("Splash: checkCurrentRegistration result: $resource")
+
+        when (resource) {
             is Resource.Success -> {
-                val response = draftResource.data
-                Timber.d("Splash: Success Data: $response")
-                if (isDraftExists(response)) {
-                    if (response.registrationForm != null) {
-                        handleRegistrationStatus(response)
-                    } else {
+                val response = resource.data
+                if (response == null || !response.hasRegistration) {
+                    // Trường hợp 3: Chưa có đơn -> Cho phép tạo đơn mới
+                    _destination.value = SplashDestination.Registration(null)
+                    return
+                }
+
+                when (response.type) {
+                    CurrentType.DRAFT.name.lowercase() -> {
+                        // Cache the response before navigating
+                        registrationRepository.setCachedRegistration(response)
+                        // Trường hợp 1: Đang điền dở -> Chuyển sang Registration để SplashScreen hiển thị dialog xác nhận
                         _destination.value = SplashDestination.Registration(response)
                     }
-                } else {
-                    _destination.value = SplashDestination.Registration(null)
+
+                    CurrentType.ACTIVE.name.lowercase() -> {
+                        registrationRepository.setCachedRegistration(response)
+                        // Trường hợp 2: Đã submit, đang xử lý -> Vào màn hình theo dõi đơn
+                        _destination.value = SplashDestination.Tracking(response)
+                    }
+
+                    else -> {
+                        _destination.value = SplashDestination.Registration(null)
+                    }
                 }
             }
 
             is Resource.Error -> {
-                val rawData = draftResource.data
-                Timber.d("Splash: Error Data Type: ${rawData?.javaClass?.name}, Data: $rawData")
-
-                val draftData = when (rawData) {
-                    is DraftResponse -> rawData
-                    is JSONObject -> {
-                        DraftResponse(
-                            hasDraft = true,
-                            existingFormId = rawData.optString("existingFormId").takeIf { it.isNotEmpty() },
-                            existingFormCode = rawData.optString("existingFormCode").takeIf { it.isNotEmpty() },
-                            existingStatus = rawData.optString("existingStatus").takeIf { it.isNotEmpty() },
-                            progressPercent = if (rawData.has("progressPercent")) rawData.optInt("progressPercent") else null
-                        )
-                    }
-                    is Map<*, *> -> {
-                        DraftResponse(
-                            hasDraft = true,
-                            existingFormId = rawData["existingFormId"] as? String,
-                            existingFormCode = rawData["existingFormCode"] as? String,
-                            existingStatus = rawData["existingStatus"] as? String,
-                            progressPercent = (rawData["progressPercent"] as? Number)?.toInt()
-                        )
-                    }
-                    else -> null
-                }
-
-                if (draftData != null && isDraftExists(draftData)) {
-                    Timber.d("Splash: Found draft in error data: $draftData")
-                    _destination.value = SplashDestination.Registration(draftData)
-                } else {
-                    _destination.value = SplashDestination.Registration(null)
-                }
+                // Nếu lỗi API, mặc định cho về màn hình Registration để thử lại hoặc tạo mới
+                _destination.value = SplashDestination.Registration(null)
             }
 
             else -> _destination.value = SplashDestination.Registration(null)
         }
     }
 
-    private fun isDraftExists(draft: DraftResponse): Boolean {
-        // Kiểm tra tất cả các dấu hiệu của một đơn đang tồn tại
-        // Bao gồm cả trường hợp progressPercent = 0
-        val exists = draft.registrationForm != null || 
-               draft.hasDraft || 
-               draft.existingFormId != null || 
-               draft.progressPercent != null
-        Timber.d("Splash: isDraftExists checking: registrationForm=${draft.registrationForm!=null}, hasDraft=${draft.hasDraft}, existingFormId=${draft.existingFormId}, progressPercent=${draft.progressPercent} -> Result: $exists")
-        return exists
-    }
-
-    private fun handleRegistrationStatus(response: DraftResponse) {
-        val registration = response.registrationForm ?: return
-        Timber.d("Splash: Handling status for ${registration.status}")
-        
-        if (registration.status.equals(RegistrationStatus.DRAFT.name, ignoreCase = true)) {
-            _destination.value = SplashDestination.Registration(response)
-        } else {
-            when {
-                registration.status.equals(RegistrationStatus.PENDING.name, ignoreCase = true) -> {
-                    _destination.value = SplashDestination.Pending(registration.id)
-                }
-                registration.status.equals(RegistrationStatus.REQUIRES_SUPPLEMENT.name, ignoreCase = true) -> {
-                    _destination.value = SplashDestination.RequiresSupplement(registration.id)
-                }
-                registration.status.equals(RegistrationStatus.APPROVED.name, ignoreCase = true) -> {
-                    _destination.value = SplashDestination.Home
-                }
-                registration.status.equals(RegistrationStatus.REJECTED.name, ignoreCase = true) -> {
-                    _destination.value = SplashDestination.Registration(null)
-                }
-                else -> {
-                    _destination.value = SplashDestination.Home
-                }
-            }
+    private fun handleDraftProgress(progress: Int, draft: DraftRegistrationDTO?) {
+        when {
+            progress < 25 -> _destination.value = SplashDestination.Step1Residence(draft)
+            progress < 50 -> _destination.value = SplashDestination.Step2Temporary(draft)
+            progress < 75 -> _destination.value = SplashDestination.Step3Documents(draft)
+            else -> _destination.value = SplashDestination.SubmitReady(draft)
         }
     }
 
@@ -218,7 +177,10 @@ class SplashViewModel @Inject constructor(
         }
 
         return permissions.all {
-            androidx.core.content.ContextCompat.checkSelfPermission(context, it) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                it
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         }
     }
 
@@ -233,6 +195,7 @@ class SplashViewModel @Inject constructor(
         viewModelScope.launch {
             registrationRepository.deleteRegistrationForm(id).collect { resource ->
                 if (resource is Resource.Success) {
+                    registrationRepository.clearCachedRegistration()
                     _destination.value = SplashDestination.Registration(null)
                 }
             }

@@ -3,10 +3,10 @@ package com.duongnd.kytucxa.data.repository
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.core.utils.handleResponseResource
 import com.duongnd.kytucxa.data.remote.api.RegistrationApi
-import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationRequest
-import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationCreateRequest
+import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationCreateResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.current.CurrentResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.document.UploadDocumentResponse
-import com.duongnd.kytucxa.data.remote.dto.registration.draft.DraftResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.submit.RegistrationSubmitRequest
@@ -25,9 +25,9 @@ import javax.inject.Singleton
 class RegistrationRepositoryImpl @Inject constructor(
     private val registrationApi: RegistrationApi
 ) : RegistrationRepository {
-    override suspend fun createRegistrationForm(registrationRequest: RegistrationRequest): Flow<Resource<RegistrationResponse>> {
+    override suspend fun createRegistrationForm(registrationCreateRequest: RegistrationCreateRequest): Flow<Resource<RegistrationCreateResponse>> {
         return handleResponseResource {
-            registrationApi.createRegistrationFormApi(registrationRequest)
+            registrationApi.createRegistrationFormApi(registrationCreateRequest)
         }
     }
 
@@ -46,12 +46,6 @@ class RegistrationRepositoryImpl @Inject constructor(
     ): Flow<Resource<TemporaryResponse>> {
         return handleResponseResource {
             registrationApi.updateTemporaryFormApi(id, temporaryRequest)
-        }
-    }
-
-    override suspend fun getCurrentDraft(): Flow<Resource<DraftResponse>> {
-        return handleResponseResource {
-            registrationApi.getCurrentDraftApi()
         }
     }
 
@@ -87,5 +81,23 @@ class RegistrationRepositoryImpl @Inject constructor(
         return handleResponseResource {
             registrationApi.submitRegistrationFormApi(id, RegistrationSubmitRequest(signature))
         }
+    }
+
+    private var cachedRegistration: CurrentResponse? = null
+
+    override suspend fun getCurrentRegistration(): Flow<Resource<CurrentResponse>> {
+        return handleResponseResource {
+            registrationApi.getCurrentRegistrationApi()
+        }
+    }
+
+    override fun setCachedRegistration(response: CurrentResponse) {
+        cachedRegistration = response
+    }
+
+    override fun getCachedRegistration(): CurrentResponse? = cachedRegistration
+
+    override fun clearCachedRegistration() {
+        cachedRegistration = null
     }
 }

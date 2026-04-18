@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.core.utils.SessionManager
-import com.duongnd.kytucxa.data.remote.dto.registration.FormData
+import com.duongnd.kytucxa.data.remote.dto.registration.FormDataDTO
+import com.duongnd.kytucxa.data.remote.dto.registration.current.CurrentResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceDTO
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceResponse
@@ -63,36 +64,48 @@ class ResidenceViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            registrationRepository.getCurrentDraft().collect { resource ->
-                if (resource is Resource.Success) {
-                    val draft = resource.data
-                    existingFormId = draft.existingFormId ?: draft.registrationForm?.id
-                    
-                    draft.registrationForm?.formData?.residence?.let { resDto ->
-                        val loadedResidence = ResidenceModel(
-                            fullName = resDto.fullName ?: "",
-                            gender = resDto.gender ?: "",
-                            dateOfBirth = resDto.dateOfBirth ?: "",
-                            cccd = resDto.cccd ?: "",
-                            cccdIdIssueDate = resDto.cccdIdIssueDate ?: "",
-                            cccdIdIssuePlace = resDto.cccdIdIssuePlace ?: "",
-                            permanentAddress = resDto.permanentAddress ?: "",
-                            phoneNumber = resDto.phoneNumber ?: "",
-                            email = resDto.email ?: "",
-                            emergencyContact = resDto.emergencyContact ?: "",
-                            schoolName = resDto.schoolName ?: "",
-                            academicYear = resDto.academicYear ?: "",
-                            className = resDto.className ?: "",
-                            department = resDto.department ?: "",
-                            major = resDto.major ?: "",
-                            studentId = resDto.studentId ?: "",
-                            dormName = resDto.dormName ?: "",
-                            duration = resDto.duration ?: ""
-                        )
-                        originalResidence = loadedResidence
-                        _uiState.update { it.copy(residence = loadedResidence) }
+            val cached = registrationRepository.getCachedRegistration()
+            if (cached != null && cached.draft != null) {
+                Timber.d("ResidenceViewModel: Using cached registration")
+                handleLoadedRegistration(cached)
+            } else {
+                registrationRepository.getCurrentRegistration().collect { resource ->
+                    if (resource is Resource.Success) {
+                        resource.data?.let { handleLoadedRegistration(it) }
                     }
                 }
+            }
+        }
+    }
+
+    private fun handleLoadedRegistration(currentRes: CurrentResponse) {
+        val draft = currentRes.draft
+        if (draft != null) {
+            existingFormId = draft.id
+
+            draft.formData?.residence?.let { resDto ->
+                val loadedResidence = ResidenceModel(
+                    fullName = resDto.fullName,
+                    gender = resDto.gender,
+                    dateOfBirth = resDto.dateOfBirth,
+                    cccd = resDto.cccd,
+                    cccdIdIssueDate = resDto.cccdIdIssueDate,
+                    cccdIdIssuePlace = resDto.cccdIdIssuePlace,
+                    permanentAddress = resDto.permanentAddress,
+                    phoneNumber = resDto.phoneNumber,
+                    email = resDto.email,
+                    emergencyContact = resDto.emergencyContact,
+                    schoolName = resDto.schoolName,
+                    academicYear = resDto.academicYear,
+                    className = resDto.className,
+                    department = resDto.department,
+                    major = resDto.major,
+                    studentId = resDto.studentId,
+                    dormName = resDto.dormName,
+                    duration = resDto.duration
+                )
+                originalResidence = loadedResidence
+                _uiState.update { it.copy(residence = loadedResidence) }
             }
         }
     }
@@ -167,7 +180,7 @@ class ResidenceViewModel @Inject constructor(
         id = existingFormId ?: "",
         currentStep = 1,
         completedSteps = listOf(1),
-        formData = FormData()
+        formData = FormDataDTO()
     )
 
     fun resetUpdateResult() {

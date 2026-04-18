@@ -1,6 +1,6 @@
 package com.duongnd.kytucxa.data.remote.dto.registration.residence
 
-import com.duongnd.kytucxa.data.remote.dto.registration.FormData
+import com.duongnd.kytucxa.data.remote.dto.registration.FormDataDTO
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -10,5 +10,5 @@ data class RegistrationForm(
     val id: String,
     val completedSteps: List<Int>,
     val currentStep: Int,
-    val formData: FormData
+    val formData: FormDataDTO
 )

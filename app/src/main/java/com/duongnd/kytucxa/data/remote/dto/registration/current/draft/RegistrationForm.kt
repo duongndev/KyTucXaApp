@@ -1,6 +1,8 @@
-package com.duongnd.kytucxa.data.remote.dto.registration.draft
+package com.duongnd.kytucxa.data.remote.dto.registration.current.draft
 
-import com.duongnd.kytucxa.data.remote.dto.registration.FormData
+import com.duongnd.kytucxa.data.remote.dto.registration.FormDataDTO
+import com.duongnd.kytucxa.data.remote.dto.registration.RequiredDocumentsDTO
+import com.duongnd.kytucxa.data.remote.dto.registration.current.UserIdDTO
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -15,13 +17,13 @@ data class RegistrationForm(
     val currentStep: Int? = 0,
     val deadline: Any?,
     val documents: List<DocumentDraft>? = emptyList(),
-    val formData: FormData?,
+    val formData: FormDataDTO?,
     val isLocked: Boolean? = false,
     val isMissingDocuments: Boolean? = false,
     val missingDocuments: List<Any>? = emptyList(),
     val registrationFormCode: String?,
     val rejectedAt: Any?,
-    val requiredDocuments: RequiredDocuments?,
+    val requiredDocuments: RequiredDocumentsDTO?,
     val resubmitCount: Int? = 0,
     val signature: Any?,
     val source: String?,
@@ -29,5 +31,5 @@ data class RegistrationForm(
     val submissionType: String?,
     val submittedAt: Any?,
     val updatedAt: String?,
-    val userId: UserId?
+    val userId: UserIdDTO?
 )

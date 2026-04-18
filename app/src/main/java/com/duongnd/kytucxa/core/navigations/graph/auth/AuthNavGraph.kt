@@ -16,11 +16,11 @@ import com.duongnd.kytucxa.feature.auth.login.LoginScreen
 import com.duongnd.kytucxa.feature.auth.register.AvatarUploadScreen
 import com.duongnd.kytucxa.feature.auth.register.RegisterScreen
 import com.duongnd.kytucxa.feature.auth.verify.EmailVerificationScreen
-import com.duongnd.kytucxa.feature.registration.HtmlPreviewScreen
+import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
 import com.duongnd.kytucxa.feature.registration.confirm.RegistrationConfirmScreen
 import com.duongnd.kytucxa.feature.registration.confirm.RegistrationConfirmViewModel
-import com.duongnd.kytucxa.feature.registration.RegistrationSuccessScreen
-import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
+import com.duongnd.kytucxa.feature.registration.preview.HtmlPreviewScreen
+import com.duongnd.kytucxa.feature.registration.preview.HtmlPreviewViewModel
 import com.duongnd.kytucxa.feature.registration.residence.ResidenceFormScreen
 import com.duongnd.kytucxa.feature.registration.residence.ResidenceViewModel
 import com.duongnd.kytucxa.feature.registration.submissionMethod.DirectSubmissionScreen
@@ -119,7 +119,7 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
                 onBack = { navController.popBackStack() }
             )
         }
-        
+
         composable(Screen.RegistrationForm.route) { entry ->
             val parentEntry = remember(entry) {
                 navController.getBackStackEntry(Graphs.AUTH)
@@ -132,7 +132,7 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Screen.TemporaryForm.route) {entry ->
+        composable(Screen.TemporaryForm.route) { entry ->
             val parentEntry = remember(entry) {
                 navController.getBackStackEntry(Graphs.AUTH)
             }
@@ -144,7 +144,7 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
             )
 
         }
-        
+
         composable(Screen.DocumentUpload.route) { entry ->
             val parentEntry = remember(entry) {
                 navController.getBackStackEntry(Graphs.AUTH)
@@ -152,12 +152,8 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
             val registrationViewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
             val uploadViewModel = hiltViewModel<UploadDocumentViewModel>()
 
-            val draft by registrationViewModel.draft.collectAsState()
-            val formId = draft?.registrationForm?.id ?: ""
-
             DocumentUploadScreen(
                 viewModel = uploadViewModel,
-                formId = formId,
                 onNext = { navController.navigate(Screen.RegistrationConfirm.route) },
                 onBack = { navController.popBackStack() }
             )
@@ -170,18 +166,18 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
             val confirmViewModel = hiltViewModel<RegistrationConfirmViewModel>()
             val registrationViewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
             val signatureViewModel = hiltViewModel<SignatureViewModel>(parentEntry)
-            
-            val draft by registrationViewModel.draft.collectAsState()
-            val formId = draft?.registrationForm?.id ?: ""
+
+            val formId by registrationViewModel.formId.collectAsState()
+            val safeFormId = formId ?: ""
 
             RegistrationConfirmScreen(
                 viewModel = confirmViewModel,
                 signatureViewModel = signatureViewModel,
                 onViewResidenceDetail = {
-                    navController.navigate(Screen.HtmlPreview.createRoute(formId, "residence"))
+                    navController.navigate(Screen.HtmlPreview.createRoute(safeFormId, "residence"))
                 },
                 onViewTemporaryDetail = {
-                    navController.navigate(Screen.HtmlPreview.createRoute(formId, "temporary"))
+                    navController.navigate(Screen.HtmlPreview.createRoute(safeFormId, "temporary"))
                 },
                 onViewDocumentsDetail = { /* Điều hướng preview giấy tờ */ },
                 onOpenSignature = { navController.navigate(Screen.Signature.route) },
@@ -197,10 +193,7 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
                 navArgument("type") { type = NavType.StringType }
             )
         ) { entry ->
-            val parentEntry = remember(entry) {
-                navController.getBackStackEntry(Graphs.AUTH)
-            }
-            val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
+            val viewModel = hiltViewModel<HtmlPreviewViewModel>()
             val formId = entry.arguments?.getString("formId") ?: ""
             val type = entry.arguments?.getString("type") ?: ""
 
@@ -227,14 +220,14 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
             )
         }
 
-        composable("registration_success") {
-            RegistrationSuccessScreen(
-                onContinue = {
-                    navController.navigate(Graphs.MAIN) {
-                        popUpTo(Graphs.AUTH) { inclusive = true }
-                    }
-                }
-            )
-        }
+//        composable("registration_success") {
+//            RegistrationSuccessScreen(
+//                onContinue = {
+//                    navController.navigate(Graphs.MAIN) {
+//                        popUpTo(Graphs.AUTH) { inclusive = true }
+//                    }
+//                }
+//            )
+//        }
     }
 }

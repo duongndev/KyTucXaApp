@@ -3,8 +3,8 @@ package com.duongnd.kytucxa.feature.registration.submissionMethod
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duongnd.kytucxa.core.utils.Resource
-import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationRequest
-import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationCreateRequest
+import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationCreateResponse
 import com.duongnd.kytucxa.domain.models.SubmissionMethod
 import com.duongnd.kytucxa.domain.repository.RegistrationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,7 +38,7 @@ class SubmissionMethodViewModel @Inject constructor(
     private fun createRegistration(submissionType: String) {
         viewModelScope.launch {
             registrationRepository.createRegistrationForm(
-                RegistrationRequest(submissionType = submissionType)
+                RegistrationCreateRequest(submissionType = submissionType)
             ).collect { result ->
                 when (result) {
                     is Resource.Loading -> {
@@ -48,7 +48,7 @@ class SubmissionMethodViewModel @Inject constructor(
                         _state.update { it.copy(isLoading = false, isSuccess = true) }
                     }
                     is Resource.Error -> {
-                        val existingData = result.data as? RegistrationResponse
+                        val existingData = result.data as? RegistrationCreateResponse
                         _state.update { 
                             it.copy(
                                 isLoading = false, 

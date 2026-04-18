@@ -1,4 +1,4 @@
-package com.duongnd.kytucxa.data.remote.dto.registration.draft
+package com.duongnd.kytucxa.data.remote.dto.registration.current.draft
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass

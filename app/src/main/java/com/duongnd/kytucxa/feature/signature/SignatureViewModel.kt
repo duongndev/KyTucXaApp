@@ -18,18 +18,53 @@ class SignatureViewModel @Inject constructor() : ViewModel() {
     val state: StateFlow<SignatureState> = _state.asStateFlow()
 
     fun updateSignature(bitmap: Bitmap?) {
-        val base64 = bitmap?.let { bitmapToBase64(it) }
+        val optimizedBitmap = bitmap?.let { trimSignature(it) }
+        val base64 = optimizedBitmap?.let { bitmapToBase64(it) }
         _state.update { 
             it.copy(
-                bitmap = bitmap,
+                bitmap = optimizedBitmap,
                 base64 = base64
             )
         }
     }
 
+    private fun trimSignature(bmp: Bitmap): Bitmap {
+        var firstX = bmp.width
+        var firstY = bmp.height
+        var lastX = 0
+        var lastY = 0
+
+        // Tìm phạm vi có pixel màu (không trong suốt)
+        for (x in 0 until bmp.width) {
+            for (y in 0 until bmp.height) {
+                val pixel = bmp.getPixel(x, y)
+                if (pixel != android.graphics.Color.TRANSPARENT && pixel != 0) {
+                    if (x < firstX) firstX = x
+                    if (y < firstY) firstY = y
+                    if (x > lastX) lastX = x
+                    if (y > lastY) lastY = y
+                }
+            }
+        }
+
+        return if (lastX < firstX || lastY < firstY) {
+            bmp // Trả về ảnh gốc nếu không tìm thấy nét vẽ
+        } else {
+            // Thêm một chút padding (8px) để không bị sát mép
+            val padding = 8
+            val startX = (firstX - padding).coerceAtLeast(0)
+            val startY = (firstY - padding).coerceAtLeast(0)
+            val width = (lastX - firstX + padding * 2).coerceAtMost(bmp.width - startX)
+            val height = (lastY - firstY + padding * 2).coerceAtMost(bmp.height - startY)
+            
+            Bitmap.createBitmap(bmp, startX, startY, width, height)
+        }
+    }
+
     private fun bitmapToBase64(bitmap: Bitmap): String {
         val byteArrayOutputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
+        // Sử dụng PNG để giữ độ trong suốt cho chữ ký
+        bitmap.compress(Bitmap.CompressFormat.PNG, 90, byteArrayOutputStream)
         val byteArray = byteArrayOutputStream.toByteArray()
         return Base64.encodeToString(byteArray, Base64.NO_WRAP)
     }

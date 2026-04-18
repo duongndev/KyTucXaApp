@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duongnd.kytucxa.core.utils.Resource
+import com.duongnd.kytucxa.data.remote.dto.registration.current.CurrentResponse
 import com.duongnd.kytucxa.domain.repository.RegistrationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -15,9 +16,11 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
+import androidx.core.net.toUri
 
 @HiltViewModel
 class UploadDocumentViewModel @Inject constructor(
@@ -28,32 +31,74 @@ class UploadDocumentViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UploadDocumentState())
     val uiState = _uiState.asStateFlow()
 
-    fun onIdCardFrontChanged(formId: String, uri: Uri?) {
+    private var currentFormId: String? = null
+
+    init {
+        loadInitialData()
+    }
+
+    private fun loadInitialData() {
+        viewModelScope.launch {
+            val cached = registrationRepository.getCachedRegistration()
+            if (cached != null && cached.draft != null) {
+                Timber.d("UploadDocumentViewModel: Using cached registration")
+                handleLoadedRegistration(cached)
+            } else {
+                registrationRepository.getCurrentRegistration().collect { resource ->
+                    if (resource is Resource.Success) {
+                        resource.data?.let { handleLoadedRegistration(it) }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleLoadedRegistration(currentRes: CurrentResponse) {
+        val draft = currentRes.draft ?: return
+        currentFormId = draft.id
+        val documents = draft.documents ?: emptyList()
+        
+        _uiState.update { state ->
+            state.copy(
+                idCardFront = documents.find { it.type == "cccd_front" }?.fileUrl?.toUri(),
+                idCardBack = documents.find { it.type == "cccd_back" }?.fileUrl?.toUri(),
+                studentCard = documents.find { it.type == "student_card" }?.fileUrl?.toUri(),
+                priorityDoc = documents.find { it.type == "priority_proof" }?.fileUrl?.toUri()
+            )
+        }
+    }
+
+    fun onIdCardFrontChanged(uri: Uri?) {
         _uiState.update { it.copy(idCardFront = uri) }
-        uri?.let { uploadSingleDocument(formId, it, "cccd_front", "Mặt trước CCCD") }
+        uri?.let { uploadSingleDocument(it, "cccd_front", "Mặt trước CCCD") }
     }
 
-    fun onIdCardBackChanged(formId: String, uri: Uri?) {
+    fun onIdCardBackChanged(uri: Uri?) {
         _uiState.update { it.copy(idCardBack = uri) }
-        uri?.let { uploadSingleDocument(formId, it, "cccd_back", "Mặt sau CCCD") }
+        uri?.let { uploadSingleDocument(it, "cccd_back", "Mặt sau CCCD") }
     }
 
-    fun onStudentCardChanged(formId: String, uri: Uri?) {
+    fun onStudentCardChanged(uri: Uri?) {
         _uiState.update { it.copy(studentCard = uri) }
-        uri?.let { uploadSingleDocument(formId, it, "student_card", "Thẻ sinh viên") }
+        uri?.let { uploadSingleDocument(it, "student_card", "Thẻ sinh viên") }
     }
 
-    fun onPriorityDocChanged(formId: String, uri: Uri?) {
+    fun onPriorityDocChanged(uri: Uri?) {
         _uiState.update { it.copy(priorityDoc = uri) }
-        uri?.let { uploadSingleDocument(formId, it, "priority_proof", "Giấy tờ ưu tiên") }
+        uri?.let { uploadSingleDocument(it, "priority_proof", "Giấy tờ ưu tiên") }
     }
 
     private fun uploadSingleDocument(
-        formId: String,
         uri: Uri,
         type: String,
         note: String
     ) {
+        val formId = currentFormId
+        if (formId == null) {
+            _uiState.update { it.copy(uploadResult = Resource.Error("Không tìm thấy Form ID")) }
+            return
+        }
+
         viewModelScope.launch {
             _uiState.update { 
                 it.copy(

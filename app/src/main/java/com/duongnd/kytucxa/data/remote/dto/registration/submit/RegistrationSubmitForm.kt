@@ -1,6 +1,6 @@
 package com.duongnd.kytucxa.data.remote.dto.registration.submit
 
-import com.duongnd.kytucxa.data.remote.dto.registration.RequiredDocuments
+import com.duongnd.kytucxa.data.remote.dto.registration.RequiredDocumentsDTO
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -12,7 +12,7 @@ data class RegistrationSubmitForm(
     val currentStep: Int? = null,
     val isLocked: Boolean? = false,
     val registrationFormCode: String? = null,
-    val requiredDocuments: RequiredDocuments? = null,
+    val requiredDocuments: RequiredDocumentsDTO? = null,
     val signature: String? = null,
     val signatureUrl: String? = null,
     val stampedFormDeadline: String? = null,

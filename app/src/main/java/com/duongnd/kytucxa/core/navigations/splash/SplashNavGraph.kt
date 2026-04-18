@@ -4,6 +4,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.duongnd.kytucxa.data.remote.dto.registration.current.draft.DraftRegistrationDTO
 import com.duongnd.kytucxa.core.navigations.Screen
 import com.duongnd.kytucxa.core.navigations.Graphs
 import com.duongnd.kytucxa.feature.splash.SplashScreen
@@ -30,8 +31,13 @@ fun NavGraphBuilder.splashNavGraph(navController: NavHostController) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
                 },
-                onNavigateToRegistration = { draft ->
+                onNavigateToRegistration = { draft: DraftRegistrationDTO? ->
                     navController.navigate(Graphs.REGISTRATION) {
+                        popUpTo(Graphs.SPLASH) { inclusive = true }
+                    }
+                },
+                onNavigateToTracking = { registrationId ->
+                    navController.navigate(Screen.RegistrationFlow.route) {
                         popUpTo(Graphs.SPLASH) { inclusive = true }
                     }
                 },

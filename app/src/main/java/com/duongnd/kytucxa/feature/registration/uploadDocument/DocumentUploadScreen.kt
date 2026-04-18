@@ -100,7 +100,6 @@ import java.io.FileOutputStream
 @Composable
 fun DocumentUploadScreen(
     viewModel: UploadDocumentViewModel,
-    formId: String,
     onNext: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -148,10 +147,10 @@ fun DocumentUploadScreen(
         studentCard = studentCard,
         priorityDoc = priorityDoc,
         isSubmitting = isSubmitting,
-        onUpdateIdCardFront = { viewModel.onIdCardFrontChanged(formId, it) },
-        onUpdateIdCardBack = { viewModel.onIdCardBackChanged(formId, it) },
-        onUpdateStudentCard = { viewModel.onStudentCardChanged(formId, it) },
-        onUpdatePriorityDoc = { viewModel.onPriorityDocChanged(formId, it) },
+        onUpdateIdCardFront = { viewModel.onIdCardFrontChanged(it) },
+        onUpdateIdCardBack = { viewModel.onIdCardBackChanged(it) },
+        onUpdateStudentCard = { viewModel.onStudentCardChanged(it) },
+        onUpdatePriorityDoc = { viewModel.onPriorityDocChanged(it) },
         onUploadDocuments = onNext,
         onBackClick = { showExitDialog = true }
     )

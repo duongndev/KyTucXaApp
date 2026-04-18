@@ -1,10 +1,11 @@
 package com.duongnd.kytucxa.data.remote.api
 
 import com.duongnd.kytucxa.data.remote.dto.ApiResponse
-import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationRequest
-import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationCreateRequest
+import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationCreateResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.current.CurrentResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.document.UploadDocumentResponse
-import com.duongnd.kytucxa.data.remote.dto.registration.draft.DraftResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.current.draft.DraftResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.submit.RegistrationSubmitRequest
@@ -27,8 +28,8 @@ interface RegistrationApi {
 
     @POST("/api/registrations")
     suspend fun createRegistrationFormApi(
-        @Body createRegistration: RegistrationRequest
-    ): Response<ApiResponse<RegistrationResponse>>
+        @Body createRegistration: RegistrationCreateRequest
+    ): Response<ApiResponse<RegistrationCreateResponse>>
 
     @PATCH("/api/registrations/{id}/step1")
     suspend fun updateResidenceFormApi(
@@ -43,7 +44,7 @@ interface RegistrationApi {
     ): Response<ApiResponse<TemporaryResponse>>
 
     @GET("/api/registrations/my-current")
-    suspend fun getCurrentDraftApi(): Response<ApiResponse<DraftResponse>>
+    suspend fun getCurrentRegistrationApi(): Response<ApiResponse<CurrentResponse>>
 
     @DELETE("/api/registrations/{id}")
     suspend fun deleteRegistrationFormApi(

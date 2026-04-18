@@ -3,14 +3,21 @@ package com.duongnd.kytucxa.data.repository
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.core.utils.handleResponseResource
 import com.duongnd.kytucxa.data.remote.api.RegistrationApi
-import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationRequest
-import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationCreateRequest
+import com.duongnd.kytucxa.data.remote.dto.registration.create.RegistrationCreateResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.current.CurrentResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.document.UploadDocumentResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.submit.RegistrationSubmitRequest
+import com.duongnd.kytucxa.data.remote.dto.registration.submit.RegistrationSubmitResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryRequest
 import com.duongnd.kytucxa.data.remote.dto.registration.temporary.TemporaryResponse
 import com.duongnd.kytucxa.domain.repository.RegistrationRepository
 import kotlinx.coroutines.flow.Flow
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,9 +25,9 @@ import javax.inject.Singleton
 class RegistrationRepositoryImpl @Inject constructor(
     private val registrationApi: RegistrationApi
 ) : RegistrationRepository {
-    override suspend fun createRegistrationForm(registrationRequest: RegistrationRequest): Flow<Resource<RegistrationResponse>> {
+    override suspend fun createRegistrationForm(registrationCreateRequest: RegistrationCreateRequest): Flow<Resource<RegistrationCreateResponse>> {
         return handleResponseResource {
-            registrationApi.createRegistrationFormApi(registrationRequest)
+            registrationApi.createRegistrationFormApi(registrationCreateRequest)
         }
     }
 
@@ -42,4 +49,55 @@ class RegistrationRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteRegistrationForm(id: String): Flow<Resource<Map<String, Any?>?>> {
+        return handleResponseResource {
+            registrationApi.deleteRegistrationFormApi(id)
+        }
+    }
+
+    override suspend fun updateDocumentForm(
+        formId: String,
+        image: MultipartBody.Part,
+        type: String,
+        note: String?
+    ): Flow<Resource<UploadDocumentResponse>> {
+        val typeBody = type.toRequestBody("text/plain".toMediaTypeOrNull())
+        val noteBody = note?.toRequestBody("text/plain".toMediaTypeOrNull())
+
+        return handleResponseResource {
+            registrationApi.updateDocumentFormApi(
+                formId = formId,
+                image = image,
+                type = typeBody,
+                note = noteBody
+            )
+        }
+    }
+
+    override suspend fun submitRegistrationForm(
+        id: String,
+        signature: String
+    ): Flow<Resource<RegistrationSubmitResponse>> {
+        return handleResponseResource {
+            registrationApi.submitRegistrationFormApi(id, RegistrationSubmitRequest(signature))
+        }
+    }
+
+    private var cachedRegistration: CurrentResponse? = null
+
+    override suspend fun getCurrentRegistration(): Flow<Resource<CurrentResponse>> {
+        return handleResponseResource {
+            registrationApi.getCurrentRegistrationApi()
+        }
+    }
+
+    override fun setCachedRegistration(response: CurrentResponse) {
+        cachedRegistration = response
+    }
+
+    override fun getCachedRegistration(): CurrentResponse? = cachedRegistration
+
+    override fun clearCachedRegistration() {
+        cachedRegistration = null
+    }
 }

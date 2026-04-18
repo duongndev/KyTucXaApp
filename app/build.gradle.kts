@@ -4,6 +4,7 @@ plugins {
     id("dagger.hilt.android.plugin")
     id("com.google.devtools.ksp")
     id("kotlin-parcelize")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -111,7 +112,17 @@ dependencies {
     // Accompanist Pager
     implementation("com.google.accompanist:accompanist-pager:0.36.0")
     implementation("com.google.accompanist:accompanist-pager-indicators:0.36.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.36.0")
 
     // Timber
     implementation("com.jakewharton.timber:timber:5.0.1")
+
+    // Firebase
+    implementation(platform(libs.androidx.compose.bom)) // Keep consistency if needed, but the user used platform(libs.androidx.compose.bom) earlier. 
+    // Wait, the user has:
+     implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
+     implementation("com.google.firebase:firebase-analytics")
+    
+    // I will add:
+    implementation("com.google.firebase:firebase-messaging")
 }

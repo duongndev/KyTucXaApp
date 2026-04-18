@@ -1,15 +1,39 @@
 package com.duongnd.kytucxa.core.navigations.graph.main
 
 import android.app.Activity
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,7 +43,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
@@ -38,10 +61,6 @@ import com.duongnd.kytucxa.feature.home.HomeScreen
 import com.duongnd.kytucxa.feature.payment.PaymentHistoryScreen
 import com.duongnd.kytucxa.feature.payment.PaymentScreen
 import com.duongnd.kytucxa.feature.profile.ProfileScreen
-import com.duongnd.kytucxa.feature.registration.DocumentUploadScreen
-import com.duongnd.kytucxa.feature.registration.RegistrationFlowScreen
-import com.duongnd.kytucxa.feature.registration.residence.RegistrationFormScreen
-import com.duongnd.kytucxa.feature.registration.RegistrationViewModel
 import com.duongnd.kytucxa.feature.room.RoomDetailScreen
 import com.duongnd.kytucxa.feature.room.RoomScreen
 import com.duongnd.kytucxa.feature.support.SupportScreen
@@ -80,10 +99,7 @@ fun MainScreen(rootNavController: NavHostController) {
 
     val detailScreens = listOf(
         Screen.RoomDetail.route,
-        Screen.Payment.route,
-        Screen.RegistrationForm.route,
-        Screen.DocumentUpload.route,
-        Screen.RegistrationFlow.route
+        Screen.Payment.route
     )
 
     val showNav = currentRoute in bottomBarScreens
@@ -109,12 +125,19 @@ fun MainScreen(rootNavController: NavHostController) {
             NavHost(
                 navController = navController,
                 startDestination = Screen.Home.route,
-                modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding())
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = innerPadding.calculateBottomPadding())
             ) {
                 composable(Screen.Home.route) {
-                    HomeScreen(onNavigateToPayment = {
-                        navController.navigate(Screen.Payment.route)
-                    })
+                    HomeScreen(
+                        onNavigateToPayment = {
+                            navController.navigate(Screen.Payment.route)
+                        },
+                        onNavigateToRegistration = {
+                            rootNavController.navigate(Graphs.REGISTRATION)
+                        }
+                    )
                 }
                 composable(Screen.Room.route) {
                     RoomScreen(onRoomClick = { id ->
@@ -147,32 +170,6 @@ fun MainScreen(rootNavController: NavHostController) {
                 }
                 composable(Screen.Support.route) {
                     SupportScreen()
-                }
-                composable(Screen.RegistrationForm.route) { entry ->
-                    // Sử dụng Graphs.MAIN từ rootNavController để share ViewModel giữa các bước trong Main
-                    val parentEntry = remember(entry) {
-                        rootNavController.getBackStackEntry(Graphs.MAIN)
-                    }
-                    val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
-                    RegistrationFormScreen(
-                        viewModel = viewModel,
-                        onNext = { navController.navigate(Screen.DocumentUpload.route) },
-                        onBack = { navController.popBackStack() }
-                    )
-                }
-                composable(Screen.DocumentUpload.route) { entry ->
-                    val parentEntry = remember(entry) {
-                        rootNavController.getBackStackEntry(Graphs.MAIN)
-                    }
-                    val viewModel = hiltViewModel<RegistrationViewModel>(parentEntry)
-                    DocumentUploadScreen(
-                        viewModel = viewModel,
-                        onNext = { navController.navigate(Screen.RegistrationFlow.route) },
-                        onBack = { navController.popBackStack() }
-                    )
-                }
-                composable(Screen.RegistrationFlow.route) {
-                    RegistrationFlowScreen(onBack = { navController.popBackStack() })
                 }
             }
         }
@@ -291,12 +288,15 @@ fun AppNavigationRail(navController: NavHostController) {
             verticalArrangement = Arrangement.Center
         ) {
             items.forEach { item ->
-                val selected = currentDestination?.hierarchy?.any { it.route == item.screen.route } == true
+                val selected =
+                    currentDestination?.hierarchy?.any { it.route == item.screen.route } == true
                 NavigationRailItem(
                     selected = selected,
                     onClick = {
                         navController.navigate(item.screen.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
                             launchSingleTop = true
                             restoreState = true
                         }
@@ -326,7 +326,13 @@ private fun RowScope.NavIcon(
                 restoreState = true
             }
         },
-        icon = { Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(24.dp)) },
+        icon = {
+            Icon(
+                item.icon,
+                contentDescription = item.label,
+                modifier = Modifier.size(24.dp)
+            )
+        },
         label = { Text(text = item.label, fontSize = 11.sp) },
         colors = NavigationBarItemDefaults.colors(
             selectedIconColor = primaryColor,

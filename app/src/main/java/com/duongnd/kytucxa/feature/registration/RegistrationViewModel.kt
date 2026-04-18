@@ -1,96 +1,78 @@
 package com.duongnd.kytucxa.feature.registration
 
-import android.graphics.Bitmap
-import android.net.Uri
-import android.util.Base64
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duongnd.kytucxa.core.utils.Resource
 import com.duongnd.kytucxa.core.utils.SessionManager
 import com.duongnd.kytucxa.data.remote.dto.auth.me.CurrentUser
+import com.duongnd.kytucxa.data.remote.dto.registration.current.CurrentResponse
+import com.duongnd.kytucxa.data.remote.dto.registration.residence.ResidenceResponse
 import com.duongnd.kytucxa.domain.models.FormFields
-import com.duongnd.kytucxa.domain.repository.PreviewRepository
+import com.duongnd.kytucxa.domain.models.TemporaryModel
+import com.duongnd.kytucxa.domain.repository.RegistrationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class RegistrationViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val sessionManager: SessionManager,
-    private val previewRepository: PreviewRepository
+    private val registrationRepository: RegistrationRepository
 ) : ViewModel() {
     private val _currentUser = MutableStateFlow<CurrentUser?>(null)
     val currentUser: StateFlow<CurrentUser?> = _currentUser.asStateFlow()
 
-    private val _previewHtml = MutableStateFlow<Resource<String>>(Resource.Idle)
-    val previewHtml: StateFlow<Resource<String>> = _previewHtml.asStateFlow()
+    private val _currentRegistration = MutableStateFlow<Resource<CurrentResponse>>(Resource.Idle)
+    val currentRegistration: StateFlow<Resource<CurrentResponse>> = _currentRegistration.asStateFlow()
 
-    fun getPreviewTamTru() {
-        viewModelScope.launch {
-            _previewHtml.value = Resource.Loading
-            previewRepository.getPreviewTamTru("don_tam_tru_KTX").collect { resource ->
-                _previewHtml.value = resource
-            }
-        }
-    }
-
-    private fun bitmapToBase64(bitmap: Bitmap): String {
-        val byteArrayOutputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
-        val byteArray = byteArrayOutputStream.toByteArray()
-        return Base64.encodeToString(byteArray, Base64.DEFAULT)
-    }
-
-    fun resetPreview() {
-        _previewHtml.value = Resource.Idle
-    }
+    private val _formId = MutableStateFlow<String?>(null)
+    val formId: StateFlow<String?> = _formId.asStateFlow()
 
     // Form data state
     private val _formFields = MutableStateFlow<FormFields?>(null)
     val formFields: StateFlow<FormFields?> = _formFields.asStateFlow()
 
-    // Documents state
-    private val _idCardFront = MutableStateFlow<Uri?>(null)
-    val idCardFront: StateFlow<Uri?> = _idCardFront.asStateFlow()
+    private val _temporaryModel = MutableStateFlow<TemporaryModel?>(null)
+    val temporaryModel: StateFlow<TemporaryModel?> = _temporaryModel.asStateFlow()
 
-    private val _idCardBack = MutableStateFlow<Uri?>(null)
-    val idCardBack: StateFlow<Uri?> = _idCardBack.asStateFlow()
-
-    private val _studentCard = MutableStateFlow<Uri?>(null)
-    val studentCard: StateFlow<Uri?> = _studentCard.asStateFlow()
-
-    private val _priorityDoc = MutableStateFlow<Uri?>(null)
-    val priorityDoc: StateFlow<Uri?> = _priorityDoc.asStateFlow()
+    private val _updateResidenceResult =
+        MutableStateFlow<Resource<ResidenceResponse>>(Resource.Idle)
+    val updateResidenceResult: StateFlow<Resource<ResidenceResponse>> =
+        _updateResidenceResult.asStateFlow()
 
     init {
         loadUser()
+        getCurrentRegistration()
     }
 
     private fun loadUser() {
         _currentUser.value = sessionManager.getUser()
     }
 
-    fun updateFormFields(fields: FormFields) {
-        _formFields.value = fields
+    fun getCurrentRegistration() {
+        viewModelScope.launch {
+            registrationRepository.getCurrentRegistration().collect { result ->
+                _currentRegistration.value = result
+                if (result is Resource.Success) {
+                    val id = result.data.draft?.id ?: result.data.active?.id
+                    _formId.value = id
+                    Timber.d("RegistrationViewModel: Loaded formId = $id")
+                }
+            }
+        }
     }
 
-    fun updateIdCardFront(uri: Uri?) {
-        _idCardFront.value = uri
-    }
-
-    fun updateIdCardBack(uri: Uri?) {
-        _idCardBack.value = uri
-    }
-
-    fun updateStudentCard(uri: Uri?) {
-        _studentCard.value = uri
-    }
-
-    fun updatePriorityDoc(uri: Uri?) {
-        _priorityDoc.value = uri
+    fun clearRegistrationData() {
+        _currentRegistration.value = Resource.Idle
+        _formId.value = null
+        _formFields.value = null
+        _temporaryModel.value = null
     }
 }

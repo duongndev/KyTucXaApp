@@ -120,7 +120,7 @@ fun UpdateProfileScreen(
             state.fullName.isNotBlank() &&
                     state.phoneNumber.isNotBlank() &&
                     cccdValidation.isValid && state.identityCard.isNotEmpty() && // CCCD phải hợp lệ và không trống
-                    state.dateOfBirth.isNotBlank() &&
+                    state.dateOfBirth != null &&
                     state.gender.isNotBlank() &&
                     state.university.isNotBlank() &&
                     state.studentId.isNotBlank() &&
@@ -165,19 +165,15 @@ fun UpdateProfileScreen(
     // State for DatePicker
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = remember(state.dateOfBirth) {
-            try {
-                if (state.dateOfBirth.isNotEmpty()) {
-                    SimpleDateFormat(
-                        "dd/MM/yyyy",
-                        Locale.getDefault()
-                    ).parse(state.dateOfBirth)?.time
-                } else null
-            } catch (e: Exception) {
-                null
-            }
-        }
+        initialSelectedDateMillis = state.dateOfBirth?.time
     )
+
+    // Cập nhật datePickerState khi state.dateOfBirth thay đổi từ ViewModel (sau khi load dữ liệu)
+    LaunchedEffect(state.dateOfBirth) {
+        state.dateOfBirth?.let {
+            datePickerState.selectedDateMillis = it.time
+        }
+    }
 
     LaunchedEffect(state.isUpdateSuccess) {
         if (state.isUpdateSuccess) {
@@ -261,7 +257,7 @@ fun UpdateProfileScreen(
                     datePickerState.selectedDateMillis?.let { millis ->
                         val date = Date(millis)
                         val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                        viewModel.onDateOfBirthChange(formatter.format(date))
+                        viewModel.onDateOfBirthChange(date)
                     }
                     showDatePicker = false
                 }) {
@@ -457,8 +453,13 @@ fun UpdateProfileScreen(
                             }
 
                             Box(modifier = Modifier.fillMaxWidth()) {
+                                val dateString = remember(state.dateOfBirth) {
+                                    state.dateOfBirth?.let {
+                                        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it)
+                                    } ?: ""
+                                }
                                 KTXTextField(
-                                    value = state.dateOfBirth,
+                                    value = dateString,
                                     onValueChange = {},
                                     placeholder = "Ngày sinh",
                                     leadingIcon = Icons.Rounded.CalendarMonth,

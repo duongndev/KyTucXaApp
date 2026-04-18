@@ -12,26 +12,37 @@ import javax.inject.Inject
 class PreviewRepositoryImpl @Inject constructor(
     private val previewApi: PreviewApi
 ) : PreviewRepository {
-    override suspend fun getPreviewTamTru(templateName: String): Flow<Resource<String>> {
+    override suspend fun getPreviewTemporary(id: String): Flow<Resource<String>> {
         return flow {
             emit(Resource.Loading)
             try {
-                val response = previewApi.getPreviewTamTru(templateName)
+                val response = previewApi.getPreviewTemporaryApi(id)
                 if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null) {
-                        emit(Resource.Success(body))
-                    } else {
-                        emit(Resource.Error("Dữ liệu rỗng"))
-                    }
+                    val previewData = response.body() ?: ""
+                    emit(Resource.Success(previewData))
                 } else {
-                    emit(Resource.Error("Lỗi: ${response.code()}"))
+                    emit(Resource.Error("Failed to load preview: ${response.message()}"))
                 }
             } catch (e: Exception) {
-                emit(Resource.Error(e.message ?: "Mất kết nối"))
+                emit(Resource.Error("An error occurred: ${e.localizedMessage}"))
             }
         }.flowOn(Dispatchers.IO)
     }
 
-
+    override suspend fun getPreviewResidence(id: String): Flow<Resource<String>> {
+        return flow {
+            emit(Resource.Loading)
+            try {
+                val response = previewApi.getPreviewResidenceApi(id)
+                if (response.isSuccessful) {
+                    val previewData = response.body() ?: ""
+                    emit(Resource.Success(previewData))
+                } else {
+                    emit(Resource.Error("Failed to load preview: ${response.message()}"))
+                }
+            } catch (e: Exception) {
+                emit(Resource.Error("An error occurred: ${e.localizedMessage}"))
+            }
+        }.flowOn(Dispatchers.IO)
+    }
 }

@@ -10,8 +10,15 @@ sealed class Screen(val route: String) {
     }
     data object SubmissionMethod : Screen("submission_method")
     data object RegistrationForm : Screen("registration_form")
-    data object ResidenceRegistration : Screen("residence_registration")
-    data object DocumentUpload : Screen("document_upload")
+    data object TemporaryForm : Screen("temporary_form")
+    data object DocumentUpload : Screen("document_upload/{formId}") {
+        fun createRoute(formId: String) = "document_upload/$formId"
+    }
+    data object RegistrationConfirm : Screen("registration_confirm")
+    data object HtmlPreview : Screen("html_preview/{formId}/{type}") {
+        fun createRoute(formId: String, type: String) = "html_preview/$formId/$type"
+    }
+    data object Signature : Screen("signature")
     data object DirectSubmissionGuide : Screen("direct_submission_guide")
     data object RegistrationFlow : Screen("registration_flow")
     data object Home : Screen("home")

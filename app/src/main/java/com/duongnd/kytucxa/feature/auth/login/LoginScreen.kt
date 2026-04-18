@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.duongnd.kytucxa.core.ui.components.KTXButton
+import com.duongnd.kytucxa.core.ui.components.KTXDialog
 import com.duongnd.kytucxa.core.ui.components.KTXTextField
 
 @Composable
@@ -106,114 +107,92 @@ fun LoginScreen(
 
     // 1. Dialog hiển thị lỗi (Thông thường hoặc Chưa xác thực OTP)
     if (showErrorDialog) {
-        AlertDialog(
-            onDismissRequest = { 
+        val isNotVerified = !loginUiState.isEmailVerified
+        KTXDialog(
+            onDismissRequest = {
                 showErrorDialog = false
                 loginViewModel.clearMessages()
             },
-            icon = { 
-                val icon = if (!loginUiState.isEmailVerified) Icons.Rounded.VerifiedUser else Icons.Rounded.ErrorOutline
-                val iconColor = if (!loginUiState.isEmailVerified) primaryColor else MaterialTheme.colorScheme.error
-                Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(44.dp)) 
-            },
-            title = { 
-                Text(
-                    text = if (!loginUiState.isEmailVerified) "Xác thực tài khoản" else "Đăng nhập thất bại", 
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleLarge
-                ) 
-            },
-            text = { 
+            icon = if (isNotVerified) Icons.Rounded.VerifiedUser else Icons.Rounded.ErrorOutline,
+            iconTint = if (isNotVerified) primaryColor else MaterialTheme.colorScheme.error,
+            title = if (isNotVerified) "Xác thực tài khoản" else "Đăng nhập thất bại",
+            description = {
                 Text(
                     text = loginUiState.errorMessage ?: "Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.",
+                    style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                ) 
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             },
-            confirmButton = {
-                if (!loginUiState.isEmailVerified) {
-                    Button(
-                        onClick = {
-                            showErrorDialog = false
-                            loginViewModel.clearMessages()
-                            onNavigateToVerify(email)
-                        },
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("XÁC THỰC NGAY")
-                    }
-                } else {
-                    Button(
-                        onClick = {
-                            showErrorDialog = false
-                            loginViewModel.clearMessages()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("ĐÓNG")
-                    }
+            confirmButtonText = if (isNotVerified) "XÁC THỰC NGAY" else "ĐÓNG",
+            onConfirm = {
+                showErrorDialog = false
+                loginViewModel.clearMessages()
+                if (isNotVerified) {
+                    onNavigateToVerify(email)
                 }
             },
-            dismissButton = if (!loginUiState.isEmailVerified) {
-                {
-                    TextButton(onClick = { 
-                        showErrorDialog = false
-                        loginViewModel.clearMessages()
-                    }) {
-                        Text("ĐỂ SAU", color = Color.Gray)
-                    }
-                }
-            } else null,
-            shape = RoundedCornerShape(24.dp)
+            dismissButtonText = if (isNotVerified) "ĐỂ SAU" else null,
+            onDismiss = {
+                showErrorDialog = false
+                loginViewModel.clearMessages()
+            },
+            isCancelable = !isNotVerified
         )
     }
 
     // 2. Dialog yêu cầu hoàn thiện hồ sơ (Thiếu thông tin)
     if (showUpdateProfileDialog) {
-        AlertDialog(
-            onDismissRequest = { 
+        KTXDialog(
+            onDismissRequest = {
                 showUpdateProfileDialog = false
                 loginViewModel.clearMessages()
             },
-            icon = { Icon(Icons.Rounded.Info, contentDescription = null, tint = primaryColor, modifier = Modifier.size(48.dp)) },
-            title = { Text(text = "Hoàn thiện hồ sơ", fontWeight = FontWeight.ExtraBold) },
-            text = { Text(text = "Thông tin cá nhân hoặc thông tin sinh viên của bạn còn thiếu. Vui lòng cập nhật để tiếp tục.") },
-            confirmButton = {
-                KTXButton(
-                    text = "CẬP NHẬT NGAY",
-                    onClick = {
-                        showUpdateProfileDialog = false
-                        loginViewModel.clearMessages()
-                        onNavigateToCompleteProfile()
-                    }
+            icon = Icons.Rounded.Info,
+            title = "Hoàn thiện hồ sơ",
+            description = {
+                Text(
+                    text = "Thông tin cá nhân hoặc thông tin sinh viên của bạn còn thiếu. Vui lòng cập nhật để tiếp tục.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
-            shape = RoundedCornerShape(28.dp)
+            confirmButtonText = "CẬP NHẬT NGAY",
+            onConfirm = {
+                showUpdateProfileDialog = false
+                loginViewModel.clearMessages()
+                onNavigateToCompleteProfile()
+            }
         )
     }
 
     // 3. Dialog yêu cầu nộp hồ sơ (Đã đủ thông tin nhưng chưa xác thực)
     if (showRegistrationDialog) {
-        AlertDialog(
-            onDismissRequest = { 
+        KTXDialog(
+            onDismissRequest = {
                 showRegistrationDialog = false
                 loginViewModel.clearMessages()
             },
-            icon = { Icon(Icons.Rounded.Assignment, contentDescription = null, tint = primaryColor, modifier = Modifier.size(48.dp)) },
-            title = { Text(text = "Nộp hồ sơ đăng ký", fontWeight = FontWeight.ExtraBold) },
-            text = { Text(text = "Thông tin của bạn đã đầy đủ. Vui lòng hoàn tất nộp hồ sơ để Ban quản lý xét duyệt phòng.") },
-            confirmButton = {
-                KTXButton(
-                    text = "NỘP HỒ SƠ NGAY",
-                    onClick = {
-                        showRegistrationDialog = false
-                        loginViewModel.clearMessages()
-                        onNavigateToRegistration()
-                    }
+            icon = Icons.Rounded.Assignment,
+            title = "Nộp hồ sơ đăng ký",
+            description = {
+                Text(
+                    text = "Thông tin của bạn đã đầy đủ. Vui lòng hoàn tất nộp hồ sơ để Ban quản lý xét duyệt phòng.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
-            shape = RoundedCornerShape(28.dp)
+            confirmButtonText = "NỘP HỒ SƠ NGAY",
+            onConfirm = {
+                showRegistrationDialog = false
+                loginViewModel.clearMessages()
+                onNavigateToRegistration()
+            }
         )
     }
 

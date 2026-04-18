@@ -6,7 +6,7 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 data class UserDTO(
     @Json(name = "_id")
-    val id: String,
+    val id: String?,
     val fullName: String? = null,
     val email: String,  
     val phoneNumber: String? = null,

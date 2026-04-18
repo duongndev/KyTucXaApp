@@ -7,6 +7,8 @@ import com.duongnd.kytucxa.core.utils.safeApiCall
 import com.duongnd.kytucxa.data.remote.api.AuthApi
 import com.duongnd.kytucxa.data.remote.dto.ApiResponse
 import com.duongnd.kytucxa.data.remote.dto.auth.UpdateProfileRequest
+import com.duongnd.kytucxa.data.remote.dto.auth.fcm.FcmRequest
+import com.duongnd.kytucxa.data.remote.dto.auth.fcm.FcmResponse
 import com.duongnd.kytucxa.data.remote.dto.auth.login.LoginRequest
 import com.duongnd.kytucxa.data.remote.dto.auth.login.LoginResponse
 import com.duongnd.kytucxa.data.remote.dto.auth.me.CurrentUser
@@ -108,6 +110,12 @@ class AuthRepositoryImpl @Inject constructor(
                 sessionManager.saveAccessToken(resource.data.accessToken)
                 sessionManager.saveRefreshToken(resource.data.refreshToken)
             }
+        }
+    }
+
+    override suspend fun updateFcmToken(fcmToken: String): Flow<Resource<FcmResponse>> {
+        return handleResponseResource {
+            authApi.updateFcmTokenApi(FcmRequest(fcmToken))
         }
     }
 

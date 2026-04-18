@@ -74,7 +74,8 @@ import com.duongnd.kytucxa.core.ui.theme.WarningOrange
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
-    onNavigateToPayment: () -> Unit = {}
+    onNavigateToPayment: () -> Unit = {},
+    onNavigateToRegistration: () -> Unit = {}
 ) {
     var showVirtualCard by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -154,7 +155,8 @@ fun HomeScreen(
                         ServiceSection(
                             isTablet = false,
                             onVirtualCardClick = { showVirtualCard = true },
-                            onPaymentClick = onNavigateToPayment
+                            onPaymentClick = onNavigateToPayment,
+                            onRegistrationClick = onNavigateToRegistration
                         )
 
                         PromotionSection(isTablet = false)
@@ -354,10 +356,20 @@ fun ModernHomeHeader() {
 }
 
 @Composable
-fun ServiceSection(isTablet: Boolean, onVirtualCardClick: () -> Unit, onPaymentClick: () -> Unit) {
+fun ServiceSection(
+    isTablet: Boolean,
+    onVirtualCardClick: () -> Unit,
+    onPaymentClick: () -> Unit,
+    onRegistrationClick: () -> Unit
+) {
     val services = listOf(
         ServiceItemData("Đổi phòng", Icons.Rounded.MeetingRoom, PrimaryBlue),
-        ServiceItemData("Đăng ký KTX", Icons.Rounded.Bolt, WarningOrange),
+        ServiceItemData(
+            "Đăng ký KTX",
+            Icons.Rounded.Bolt,
+            WarningOrange,
+            onClick = onRegistrationClick
+        ),
         ServiceItemData(
             "Thanh toán",
             Icons.Rounded.AccountBalanceWallet,

@@ -2,6 +2,8 @@ package com.duongnd.kytucxa.data.remote.api
 
 import com.duongnd.kytucxa.data.remote.dto.ApiResponse
 import com.duongnd.kytucxa.data.remote.dto.auth.UpdateProfileRequest
+import com.duongnd.kytucxa.data.remote.dto.auth.fcm.FcmRequest
+import com.duongnd.kytucxa.data.remote.dto.auth.fcm.FcmResponse
 import com.duongnd.kytucxa.data.remote.dto.auth.login.LoginRequest
 import com.duongnd.kytucxa.data.remote.dto.auth.login.LoginResponse
 import com.duongnd.kytucxa.data.remote.dto.auth.login.RefreshTokenRequest
@@ -15,6 +17,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 
 interface AuthApi {
 
@@ -49,4 +52,10 @@ interface AuthApi {
     suspend fun resendOTP(
         @Body verifyOtpRequest: VerifyOtpRequest
     ): Response<ApiResponse<Map<String, Any?>?>>
+
+
+    @PUT("/api/auth/update-fcm-token")
+    suspend fun updateFcmTokenApi(
+        @Body fcmRequest: FcmRequest
+    ): Response<ApiResponse<FcmResponse>>
 }

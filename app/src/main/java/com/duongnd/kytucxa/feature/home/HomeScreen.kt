@@ -34,10 +34,12 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Handyman
+import androidx.compose.material.icons.rounded.LocalLaundryService
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.MeetingRoom
 import androidx.compose.material.icons.rounded.Nfc
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Shop
 import androidx.compose.material.icons.rounded.TwoWheeler
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -397,7 +399,10 @@ fun ServiceSection(
         ServiceItemData("Hợp đồng", Icons.Rounded.Description, Color(0xFFEC4899)),
         ServiceItemData("Sửa chữa", Icons.Rounded.Handyman, MaterialTheme.colorScheme.error),
         ServiceItemData("Gửi xe", Icons.Rounded.TwoWheeler, Color(0xFF8B5CF6)),
-        ServiceItemData("Dịch vụ khác", Icons.Rounded.GridView, Color.Gray)
+        ServiceItemData("Chợ", Icons.Rounded.Bolt, Color(0xFF8B5CF6)),
+        ServiceItemData("Giặt là", Icons.Rounded.LocalLaundryService, Color(0xFF8B5CF6)),
+        ServiceItemData("Căng-tin", Icons.Rounded.Shop, Color(0xFF8B5CF6)),
+         ServiceItemData("Dịch vụ khác", Icons.Rounded.GridView, Color.Gray)
     )
 
     val columns = 4

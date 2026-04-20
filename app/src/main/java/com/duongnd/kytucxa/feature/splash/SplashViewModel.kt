@@ -146,6 +146,8 @@ class SplashViewModel @Inject constructor(
                         registrationRepository.setCachedRegistration(response)
                         // Trường hợp 3: Đã duyệt -> Vào màn hình chính
                         _destination.value = SplashDestination.Home
+//                        _destination.value = SplashDestination.Tracking(response)
+
                     }
 
                     else -> {

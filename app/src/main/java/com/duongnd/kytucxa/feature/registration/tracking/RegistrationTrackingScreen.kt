@@ -35,7 +35,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Article
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -65,6 +64,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -89,11 +89,14 @@ import com.duongnd.kytucxa.data.remote.dto.registration.current.tracking.Trackin
 import com.duongnd.kytucxa.data.remote.dto.registration.current.CurrentResponse
 import com.duongnd.kytucxa.data.remote.dto.registration.current.tracking.TrackingProgressDTO
 import com.duongnd.kytucxa.data.remote.dto.registration.current.tracking.TrackingStagesDTO
+import com.duongnd.kytucxa.core.ui.components.KTXDialog
+import com.duongnd.kytucxa.core.utils.DateUtils
 
 @Composable
 fun RegistrationTrackingScreen(
     onUploadStampedForm: (String) -> Unit,
     onViewDetail: (String) -> Unit,
+    onResubmit: (String) -> Unit,
     onSkip: () -> Unit,
     viewModel: RegistrationTrackingViewModel = hiltViewModel()
 ) {
@@ -103,6 +106,7 @@ fun RegistrationTrackingScreen(
         uiState = uiState,
         onUploadStampedForm = onUploadStampedForm,
         onViewDetail = onViewDetail,
+        onResubmit = onResubmit,
         onSkip = onSkip,
         onRefresh = { viewModel.getCurrentRegistration() }
     )
@@ -114,6 +118,7 @@ private fun RegistrationTrackingScreen(
     uiState: RegistrationTrackingUiState,
     onUploadStampedForm: (String) -> Unit,
     onViewDetail: (String) -> Unit,
+    onResubmit: (String) -> Unit,
     onSkip: () -> Unit,
     onRefresh: () -> Unit
 ) {
@@ -174,6 +179,7 @@ private fun RegistrationTrackingScreen(
                         currentResponse = uiState.currentRegistration,
                         onUploadStampedForm = onUploadStampedForm,
                         onViewDetail = onViewDetail,
+                        onResubmit = onResubmit,
                         onSkip = onSkip
                     )
                 }
@@ -191,11 +197,65 @@ fun RegistrationTrackingContent(
     currentResponse: CurrentResponse,
     onUploadStampedForm: (String) -> Unit,
     onViewDetail: (String) -> Unit,
+    onResubmit: (String) -> Unit,
     onSkip: () -> Unit
 ) {
     val tracking = currentResponse.tracking
     val active = currentResponse.active
     val draft = currentResponse.draft
+
+    var showMissingDocsDialog by remember { mutableStateOf(false) }
+    var showStampedFormDialog by remember { mutableStateOf(false) }
+
+    val isMissing = active?.isMissingDocuments == true ||
+            draft?.isMissingDocuments == true ||
+            active?.status in listOf("rejected", "need_correction", "correction_required", "incomplete") ||
+            draft?.status in listOf("rejected", "need_correction", "correction_required", "incomplete")
+
+    // Kiểm tra trạng thái nộp đơn có dấu
+    val needsStampedForm = tracking?.stampedForm?.uploaded == false &&
+            tracking.stampedForm.deadline != null
+
+    val missingDocsList = remember(active, draft, isMissing) {
+        val list = mutableListOf<String>()
+        val missingFromApi = active?.missingDocuments ?: draft?.missingDocuments
+        
+        missingFromApi?.forEach { item ->
+            when (item) {
+                is String -> if (item.isNotBlank()) list.add(item)
+                is Map<*, *> -> {
+                    val label = item["label"] ?: item["name"] ?: item["type"]
+                    if (label is String) list.add(label)
+                }
+            }
+        }
+
+        if (list.isEmpty() && isMissing) {
+            val req = active?.requiredDocuments ?: draft?.requiredDocuments
+            val docs = active?.documents ?: draft?.documents ?: emptyList()
+            val uploadedTypes = docs.mapNotNull { it.type }
+
+            if (req?.cccdFront == true && !uploadedTypes.contains("cccd_front")) list.add("Mặt trước CCCD")
+            if (req?.cccdBack == true && !uploadedTypes.contains("cccd_back")) list.add("Mặt sau CCCD")
+            if (req?.studentCard == true && !uploadedTypes.contains("student_card")) list.add("Thẻ sinh viên")
+            if (req?.photo3x4 == true && !uploadedTypes.contains("photo_3x4")) list.add("Ảnh 3x4")
+            if (req?.priorityDoc == true && !uploadedTypes.contains("priority_proof")) list.add("Giấy tờ ưu tiên")
+            if (req?.stampedForm == true && !uploadedTypes.contains("stamped_form")) list.add("Đơn có dấu")
+
+            if (list.isEmpty()) {
+                list.add("Các giấy tờ theo yêu cầu của quản trị viên")
+            }
+        }
+        list
+    }
+
+    LaunchedEffect(currentResponse) {
+        if (isMissing && missingDocsList.isNotEmpty()) {
+            showMissingDocsDialog = true
+        } else if (needsStampedForm) {
+            showStampedFormDialog = true
+        }
+    }
 
     val formId = active?.id ?: draft?.id ?: ""
     val formCode = tracking?.formCode ?: "N/A"
@@ -234,6 +294,13 @@ fun RegistrationTrackingContent(
             }
         }
 
+        // 3.1. Danh sách hồ sơ còn thiếu (nếu có)
+        if (isMissing && missingDocsList.isNotEmpty()) {
+            item {
+                MissingDocumentsSection(missingDocsList)
+            }
+        }
+
         // 4. Hướng dẫn nộp đơn trực tiếp
         if (active?.status == "pending_offline") {
             item {
@@ -241,7 +308,8 @@ fun RegistrationTrackingContent(
             }
         }
 
-        // 5. Nút xem chi tiết & Footer
+
+        // 6. Nút xem chi tiết & Footer
         item {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(
@@ -287,6 +355,167 @@ fun RegistrationTrackingContent(
                     color = Color(0xFF94A3B8),
                     lineHeight = 16.sp
                 )
+            }
+        }
+    }
+
+    if (showMissingDocsDialog && missingDocsList.isNotEmpty()) {
+        KTXDialog(
+            onDismissRequest = { showMissingDocsDialog = false },
+            title = "Hồ sơ còn thiếu",
+            confirmButtonText = "Đã hiểu",
+            onConfirm = { showMissingDocsDialog = false },
+            icon = Icons.Rounded.WarningAmber,
+            iconTint = Color(0xFFEF4444)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Vui lòng bổ sung các giấy tờ sau để tiếp tục xử lý hồ sơ:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF64748B),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFFEF2F2), RoundedCornerShape(12.dp))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    missingDocsList.forEach { docName ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(Color(0xFFEF4444), CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                docName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF991B1B)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showStampedFormDialog) {
+        val stampedInfo = tracking?.stampedForm
+        KTXDialog(
+            onDismissRequest = { showStampedFormDialog = false },
+            title = "Yêu cầu nộp đơn có dấu",
+            confirmButtonText = "Nộp ngay",
+            dismissButtonText = "Để sau",
+            onConfirm = {
+                showStampedFormDialog = false
+                onUploadStampedForm(formId)
+            },
+            onDismiss = { showStampedFormDialog = false },
+            icon = Icons.Rounded.ContentPaste,
+            iconTint = Color(0xFF0047BB)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Hồ sơ trực tuyến của bạn đã được duyệt sơ bộ. Vui lòng tải lên ảnh đơn đăng ký đã có dấu xác nhận.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF64748B),
+                    textAlign = TextAlign.Center
+                )
+
+                if (stampedInfo?.deadline != null) {
+                    Surface(
+                        color = if (stampedInfo.isOverdue == true) Color(0xFFFEF2F2) else Color(0xFFF0F9FF),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Rounded.Info,
+                                contentDescription = null,
+                                tint = if (stampedInfo.isOverdue == true) Color(0xFFEF4444) else Color(0xFF0047BB),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    "Hạn chót bổ sung",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color(0xFF64748B)
+                                )
+                                Text(
+                                    text = DateUtils.formatString(stampedInfo.deadline),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (stampedInfo.isOverdue == true) Color(0xFFB91C1C) else Color(0xFF0C4A6E)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MissingDocumentsSection(missingDocs: List<String>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, Color(0xFFFEE2E2))
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Rounded.WarningAmber,
+                    contentDescription = null,
+                    tint = Color(0xFFEF4444),
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    "Hồ sơ cần bổ sung",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF991B1B)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            missingDocs.forEach { doc ->
+                Row(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Rounded.ChevronRight,
+                        contentDescription = null,
+                        tint = Color(0xFFEF4444).copy(alpha = 0.5f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        doc,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFFB91C1C),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
@@ -589,7 +818,7 @@ fun StepItem(title: String, isDone: Boolean, hasNext: Boolean, isCurrent: Boolea
             label = "pulseScale"
         )
     } else {
-        remember { mutableStateOf(1f) }
+        remember { mutableFloatStateOf(1f) }
     }
 
     Row(modifier = Modifier.height(50.dp)) {
@@ -911,6 +1140,7 @@ fun RegistrationTrackingScreenPreview() {
             uiState = sampleUiState,
             onUploadStampedForm = {},
             onViewDetail = {},
+            onResubmit = {},
             onSkip = {},
             onRefresh = {}
         )

@@ -174,6 +174,9 @@ fun NavGraphBuilder.registrationNavGraph(navController: NavHostController) {
                 onViewDetail = { formId ->
                     // navController.navigate(Screen.RegistrationDetail.createRoute(formId))
                 },
+                onResubmit = { formId ->
+                    navController.navigate(Screen.DocumentUpload.createRoute(formId))
+                },
                 onSkip = {
                     navController.navigate(Graphs.MAIN) {
                         popUpTo(Graphs.REGISTRATION) { inclusive = true }

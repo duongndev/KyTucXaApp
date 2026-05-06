@@ -113,9 +113,15 @@ fun DocumentUploadScreen(
 
     var showExitDialog by remember { mutableStateOf(false) }
 
+    val hasChanges = idCardFront != null || idCardBack != null || studentCard != null || priorityDoc != null
+
     // Handle System Back Press
     BackHandler(enabled = !isSubmitting) {
-        showExitDialog = true
+        if (hasChanges) {
+            showExitDialog = true
+        } else {
+            onBack()
+        }
     }
 
     // Exit Confirmation Dialog
@@ -152,7 +158,13 @@ fun DocumentUploadScreen(
         onUpdateStudentCard = { viewModel.onStudentCardChanged(it) },
         onUpdatePriorityDoc = { viewModel.onPriorityDocChanged(it) },
         onUploadDocuments = onNext,
-        onBackClick = { showExitDialog = true }
+        onBackClick = {
+            if (hasChanges) {
+                showExitDialog = true
+            } else {
+                onBack()
+            }
+        }
     )
 }
 
